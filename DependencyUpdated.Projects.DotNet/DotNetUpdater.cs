@@ -1,6 +1,7 @@
 ﻿using System.Xml;
 using System.Xml.Linq;
 using DependencyUpdated.Core;
+using DependencyUpdated.Core.Config;
 using Microsoft.Extensions.Caching.Memory;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -19,7 +20,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         "directory.build.props"
     ];
 
-    public async Task<IReadOnlyCollection<UpdateResult>> UpdateProject(string searchPath)
+    public async Task<IReadOnlyCollection<UpdateResult>> UpdateProject(string searchPath, Project projectConfiguration)
     {
         if (!Path.Exists(searchPath))
         {
@@ -30,7 +31,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var allUpdates = new List<UpdateResult>();
         foreach (var project in projectFiles)
         {
-            var result = await HandleProjectUpdate(project);
+            var result = await HandleProjectUpdate(project, projectConfiguration);
             allUpdates.AddRange(result);
         }
         
@@ -42,7 +43,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         return ValidDotnetPatterns.SelectMany(dotnetPattern => Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories));
     }
 
-    private async Task<IReadOnlyCollection<UpdateResult>> HandleProjectUpdate(string fullPath)
+    private async Task<IReadOnlyCollection<UpdateResult>> HandleProjectUpdate(string fullPath, Project projectConfiguration)
     {
         logger.Information("Processing: {FullPath} project", fullPath);
         var nugets = ParseCsproj(fullPath);
@@ -51,7 +52,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         foreach (var nuget in nugets)
         {
             logger.Verbose("Processing {PackageName}:{PackageVersion}", nuget.Key, nuget.Value);
-            var latestVersion = await GetLatestVersion(nuget.Key);
+            var latestVersion = await GetLatestVersion(nuget.Key, projectConfiguration);
             if (latestVersion is null)
             {
                 logger.Warning("{PacakgeName} unable to find in sources", nuget.Key);
@@ -115,7 +116,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         document.Save(xmlWriter);
     }
 
-    private async Task<NuGetVersion?> GetLatestVersion(string packageId)
+    private async Task<NuGetVersion?> GetLatestVersion(string packageId, Project projectConfiguration)
     {
         var existsInCache = memoryCache.TryGetValue<NuGetVersion?>(packageId, out var cachedVersion);
         if (existsInCache)
@@ -127,6 +128,20 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         {
             new("https://api.nuget.org/v3/index.json"),
         };
+
+        if (projectConfiguration.DependencyConfigurations.Any())
+        {
+            packageSources = new List<PackageSource>();
+            foreach (var projectConfigurationPath in projectConfiguration.DependencyConfigurations)
+            {
+                var setting = Settings.LoadSpecificSettings(Path.GetDirectoryName(projectConfigurationPath)!,
+                    Path.GetFileName(projectConfigurationPath));
+                var packageSourceProvider = new PackageSourceProvider(setting);
+                var sources = packageSourceProvider.LoadPackageSources();
+                packageSources.AddRange(sources);
+            }
+        }
+        
         var providers = Repository.Provider.GetCoreV3();
         var sourceRepositoryProvider = new SourceRepositoryProvider(new PackageSourceProvider(NullSettings.Instance, packageSources), providers);
         var repositories = sourceRepositoryProvider.GetRepositories();

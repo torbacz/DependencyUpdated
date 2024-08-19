@@ -14,6 +14,8 @@
       {
         "Type": "DotNet",
         "Name": "DotNetProjects",
+        "DependencyConfigurations": [
+        ],
         "Directories": [
         ]
       }

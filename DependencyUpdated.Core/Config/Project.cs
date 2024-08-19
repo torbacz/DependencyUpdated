@@ -8,6 +8,8 @@ public sealed class Project : IValidatableObject
 
     public string Name { get; set; } = default!;
     
+    public string[] DependencyConfigurations { get; set; } = ArraySegment<string>.Empty.ToArray();
+    
     public string[] Directories { get; set; } = ArraySegment<string>.Empty.ToArray();
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

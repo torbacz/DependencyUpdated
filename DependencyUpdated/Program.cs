@@ -41,6 +41,8 @@ namespace DependencyUpdated
             var repositoryPath = string.IsNullOrEmpty(options.RepositoryPath)
                 ? Environment.CurrentDirectory
                 : options.RepositoryPath;
+            
+            Directory.SetCurrentDirectory(repositoryPath);
 
             foreach (var configEntry in config.Value.Projects)
             {
@@ -50,8 +52,8 @@ namespace DependencyUpdated
                     repositoryProvider.SwitchToDefaultBranch(repositoryPath);
                     var projectName = configEntry.Name;
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
-                    var pathWhereToSearchFiles = Path.Combine(repositoryPath, project);
-                    var updates = updater.UpdateProject(pathWhereToSearchFiles).Result;
+                  
+                    var updates = updater.UpdateProject(project, configEntry).Result;
 
                     if (updates.Count == 0)
                     {
