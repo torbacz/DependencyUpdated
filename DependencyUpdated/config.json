@@ -1,0 +1,22 @@
+{
+  "UpdaterConfig": {
+    "RepositoryType": "AzureDevOps",
+    "AzureDevOps": {
+      "Username": "",
+      "Email": "",
+      "PAT": "",
+      "Organization": "",
+      "Project": "",
+      "Repository": ""
+    },
+    "PullRequestType": "AzureDevOps",
+    "Projects": [
+      {
+        "Type": "DotNet",
+        "Name": "DotNetProjects",
+        "Directories": [
+        ]
+      }
+    ] 
+  }
+}

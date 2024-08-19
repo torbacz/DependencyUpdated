@@ -1,0 +1,3 @@
+namespace DependencyUpdated.Repositories.AzureDevOps.Dto;
+
+public record PullRequestUpdate(User AutoCompleteSetBy, GitPullRequestCompletionOptions CompletionOptions);
