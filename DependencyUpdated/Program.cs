@@ -50,7 +50,8 @@ namespace DependencyUpdated
                     repositoryProvider.SwitchToDefaultBranch(repositoryPath);
                     var projectName = configEntry.Name;
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
-                    var updates = updater.UpdateProject(project).Result;
+                    var pathWhereToSearchFiles = Path.Combine(repositoryPath, project);
+                    var updates = updater.UpdateProject(pathWhereToSearchFiles).Result;
 
                     if (updates.Count == 0)
                     {
