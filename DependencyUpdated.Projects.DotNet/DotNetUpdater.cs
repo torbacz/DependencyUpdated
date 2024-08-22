@@ -97,13 +97,14 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             OmitXmlDeclaration = true,
             Indent = true,
         };
-        
-        if (results.Count > 0)
+
+        if (results.Count == 0)
         {
-            using var xmlWriter = XmlWriter.Create(fullPath, settings);
-            document.Save(xmlWriter);
+            return results;
         }
 
+        using var xmlWriter = XmlWriter.Create(fullPath, settings);
+        document.Save(xmlWriter);
         return results;
     }
 

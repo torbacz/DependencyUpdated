@@ -67,7 +67,7 @@ namespace DependencyUpdated
                         
                     }
 
-                    if (allDepencenciesToUpdate.Count == 0) //no libs to update, we can skip this project
+                    if (allDepencenciesToUpdate.Count == 0)
                     {
                         continue;
                     }
