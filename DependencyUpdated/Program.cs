@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.IO.Enumeration;
 using CommandLine;
 using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
@@ -20,10 +21,10 @@ namespace DependencyUpdated
         public static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(RunApplication);
+                .WithParsedAsync(RunApplication);
         }
 
-        private static void RunApplication(Options options)
+        private static async Task RunApplication(Options options)
         {
             Configure(options);
             ConfigureServices();
@@ -46,22 +47,55 @@ namespace DependencyUpdated
 
             foreach (var configEntry in config.Value.Projects)
             {
+                repositoryProvider.SwitchToDefaultBranch(repositoryPath);
+
                 var updater = _serviceProvider.GetRequiredKeyedService<IProjectUpdater>(configEntry.Type);
+               
                 foreach (var project in configEntry.Directories)
                 {
-                    repositoryProvider.SwitchToDefaultBranch(repositoryPath);
-                    var projectName = configEntry.Name;
-                    repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
+                    if (!Path.Exists(project))
+                    {
+                        throw new FileNotFoundException("Search path not found", project);
+                    }
+                    var allDepencenciesToUpdate = new List<DependencyDetails>();
+                    var projectFiles = updater.GetAllProjectFiles(project).ToArray(); 
+                   
+                    foreach (var projectFile in projectFiles)
+                    {
+                        var dependencyToUpdate = await updater.ExtractAllPackagesThatNeedToBeUpdated(projectFile, configEntry);
+                        allDepencenciesToUpdate.AddRange(dependencyToUpdate);
+                        
+                    }
 
-                    var updates = updater.UpdateProject(project, configEntry).Result;
-
-                    if (updates.Count == 0)
+                    if (allDepencenciesToUpdate.Count == 0) //no libs to update, we can skip this project
                     {
                         continue;
                     }
 
-                    repositoryProvider.CommitChanges(repositoryPath, projectName);
-                    repositoryProvider.SubmitPullRequest(updates, projectName).Wait();
+                    var uniqueListOfDependencies = allDepencenciesToUpdate.DistinctBy(x => x.Name).ToList();
+
+                    foreach (var group in configEntry.Groups)
+                    {
+                        var matchesForGroup = uniqueListOfDependencies
+                            .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
+                        uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
+                        
+                        var projectName = $"{configEntry.Name}-group-{group}" ;
+                        repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
+                        
+                        var allUpdates = new List<UpdateResult>();
+                        foreach (var projectFile in projectFiles)
+                        {
+                            var updateResults = updater.HandleProjectUpdate(projectFile, matchesForGroup);
+                            allUpdates.AddRange(updateResults);
+                        }
+
+                        if (allUpdates.Count != 0)
+                        {
+                             repositoryProvider.CommitChanges(repositoryPath, projectName);
+                             repositoryProvider.SubmitPullRequest(allUpdates, projectName).Wait();
+                        }
+                    }
                 }
             }
         }

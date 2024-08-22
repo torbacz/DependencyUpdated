@@ -19,39 +19,20 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         "*.nfproj",
         "directory.build.props"
     ];
-
-    public async Task<IReadOnlyCollection<UpdateResult>> UpdateProject(string searchPath, Project projectConfiguration)
+    
+    public IEnumerable<string> GetAllProjectFiles(string searchPath)
     {
-        if (!Path.Exists(searchPath))
-        {
-            throw new FileNotFoundException("Search path not found", searchPath);
-        }
-
-        var projectFiles = GetAllProjectFiles(searchPath);
-        var allUpdates = new List<UpdateResult>();
-        foreach (var project in projectFiles)
-        {
-            var result = await HandleProjectUpdate(project, projectConfiguration);
-            allUpdates.AddRange(result);
-        }
-        
-        return allUpdates;
+        return ValidDotnetPatterns.SelectMany(dotnetPattern =>
+            Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories));
     }
 
-    private IEnumerable<string> GetAllProjectFiles(string searchPath)
-    {
-        return ValidDotnetPatterns.SelectMany(dotnetPattern => Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories));
-    }
-
-    private async Task<IReadOnlyCollection<UpdateResult>> HandleProjectUpdate(string fullPath, Project projectConfiguration)
+    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(string fullPath, ICollection<DependencyDetails> dependenciesToUpdate)
     {
         logger.Information("Processing: {FullPath} project", fullPath);
-        var packagesThatNeedToBeUpdated = await ExtractAllPackagesThatNeedToBeUpdated(fullPath, projectConfiguration);
-
-        return UpdateCsProj(fullPath, packagesThatNeedToBeUpdated);
+        return UpdateCsProj(fullPath, dependenciesToUpdate);
     }
 
-    private async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath, Project projectConfiguration)
+    public async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath, Project projectConfiguration)
     {
         var nugets = ParseCsproj(fullPath);
 
