@@ -46,9 +46,16 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
     private async Task<IReadOnlyCollection<UpdateResult>> HandleProjectUpdate(string fullPath, Project projectConfiguration)
     {
         logger.Information("Processing: {FullPath} project", fullPath);
+        var packagesThatNeedToBeUpdated = await ExtractAllPackagesThatNeedToBeUpdated(fullPath, projectConfiguration);
+
+        return UpdateCsProj(fullPath, packagesThatNeedToBeUpdated);
+    }
+
+    private async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath, Project projectConfiguration)
+    {
         var nugets = ParseCsproj(fullPath);
-        var nugetsToUpdate = new Dictionary<string, NuGetVersion>();
-        var returnList = new List<UpdateResult>();
+
+        var returnList = new List<DependencyDetails>();
         foreach (var nuget in nugets)
         {
             logger.Verbose("Processing {PackageName}:{PackageVersion}", nuget.Key, nuget.Value);
@@ -62,23 +69,25 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             if (latestVersion.Version > nuget.Value.Version)
             {
                 logger.Information("{PacakgeName} new version {Version} available", nuget.Key, latestVersion);
-                nugetsToUpdate.Add(nuget.Key, latestVersion);
-                returnList.Add(new UpdateResult(nuget.Key, nuget.Value.ToNormalizedString(),
-                    latestVersion.ToNormalizedString()));
+                returnList.Add(new DependencyDetails(nuget.Key, latestVersion.Version));
             }
         }
 
-        UpdateCsProj(fullPath, nugetsToUpdate);
         return returnList;
     }
 
-    private void UpdateCsProj(string fullPath, Dictionary<string, NuGetVersion> nugetsToUpdate)
+    private IReadOnlyCollection<UpdateResult> UpdateCsProj(string fullPath, ICollection<DependencyDetails> packagesToUpdate)
     {
+        var results = new List<UpdateResult>();
         var document = XDocument.Load(fullPath);
+
+        var nugetsToUpdate = packagesToUpdate.ToDictionary(x => x.Name, x => x.Version);
+        
         if (document.Root is null)
         {
             throw new InvalidOperationException("Root object is null");
         }
+        
         var packageReferences = document.Root.Elements("ItemGroup")
             .Elements("PackageReference");
 
@@ -86,12 +95,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         {
             var includeAttribute = packageReference.Attribute("Include");
             var versionAttribute = packageReference.Attribute("Version");
-            if (includeAttribute is null)
-            {
-                continue;
-            }
-
-            if (versionAttribute is null)
+            if (includeAttribute is null || versionAttribute is null)
             {
                 continue;
             }
@@ -103,7 +107,8 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
                 continue;
             }
             
-            versionAttribute.SetValue(newVersion.ToNormalizedString());
+            versionAttribute.SetValue(newVersion.ToString());
+            results.Add(new UpdateResult(packageName, versionAttribute.Value, newVersion.ToString()));
         }
 
         var settings = new XmlWriterSettings
@@ -114,6 +119,8 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
 
         using var xmlWriter = XmlWriter.Create(fullPath, settings);
         document.Save(xmlWriter);
+
+        return results;
     }
 
     private async Task<NuGetVersion?> GetLatestVersion(string packageId, Project projectConfiguration)
@@ -165,7 +172,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         return version;
     }
 
-    private static Dictionary<string, NuGetVersion> ParseCsproj(string path)
+    private static Dictionary<string, DependencyDetails> ParseCsproj(string path)
     {
         var document = XDocument.Load(path);
         if (document.Root is null)
@@ -175,7 +182,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var packageReferences = document.Root.Elements("ItemGroup")
             .Elements("PackageReference");
 
-        var nugets = new Dictionary<string, NuGetVersion>();
+        var nugets = new Dictionary<string, DependencyDetails>();
         foreach (var packageReference in packageReferences)
         {
             var includeAttribute = packageReference.Attribute("Include");
@@ -183,8 +190,9 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
 
             if (includeAttribute != null && versionAttribute != null)
             {
-                var version = NuGetVersion.Parse(versionAttribute.Value);
-                nugets[includeAttribute.Value] = version;
+                var version = NuGetVersion.Parse(versionAttribute.Value).Version;
+                nugets[includeAttribute.Value] =
+                    new DependencyDetails(includeAttribute.Value, version);
             }
         }
 

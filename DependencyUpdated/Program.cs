@@ -52,7 +52,7 @@ namespace DependencyUpdated
                     repositoryProvider.SwitchToDefaultBranch(repositoryPath);
                     var projectName = configEntry.Name;
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
-                  
+
                     var updates = updater.UpdateProject(project, configEntry).Result;
 
                     if (updates.Count == 0)
