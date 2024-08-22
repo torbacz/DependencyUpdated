@@ -18,9 +18,9 @@ namespace DependencyUpdated
         private static IConfiguration _configuration = default!;
         private static IServiceProvider _serviceProvider = default!;
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args)
+           await Parser.Default.ParseArguments<Options>(args)
                 .WithParsedAsync(RunApplication);
         }
 
@@ -80,7 +80,7 @@ namespace DependencyUpdated
                             .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
                         uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
                         
-                        var projectName = $"{configEntry.Name}-group-{group}" ;
+                        var projectName = ($"{configEntry.Name}-group-{group}").Replace("*","-asterix-") ;
                         repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
                         
                         var allUpdates = new List<UpdateResult>();
@@ -97,7 +97,7 @@ namespace DependencyUpdated
                         }
                     }
                 }
-            }
+            }         
         }
 
         private static void Configure(Options appOptions)

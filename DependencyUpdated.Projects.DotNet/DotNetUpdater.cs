@@ -60,7 +60,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
     private IReadOnlyCollection<UpdateResult> UpdateCsProj(string fullPath, ICollection<DependencyDetails> packagesToUpdate)
     {
         var results = new List<UpdateResult>();
-        var document = XDocument.Load(fullPath);
+        var document = XDocument.Load(fullPath, LoadOptions.PreserveWhitespace);
 
         var nugetsToUpdate = packagesToUpdate.ToDictionary(x => x.Name, x => x.Version);
         
@@ -136,17 +136,17 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var version = default(NuGetVersion?);
         foreach (var repository in repositories)
         {
-            var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(
-                packageId,
-                new SourceCacheContext(),
-                NullLogger.Instance,
-                CancellationToken.None);
-            var maxVersion = versions.Where(x => !x.IsPrerelease).Max();
-            if (version is null || (maxVersion is not null && maxVersion >= version))
-            {
-                version = maxVersion;
-            }
+                var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
+                var versions = await findPackageByIdResource.GetAllVersionsAsync(
+                    packageId,
+                    new SourceCacheContext(),
+                    NullLogger.Instance,
+                    CancellationToken.None);
+                var maxVersion = versions.Where(x => !x.IsPrerelease).Max();
+                if (version is null || (maxVersion is not null && maxVersion >= version))
+                {
+                    version = maxVersion;
+                }
         }
 
         memoryCache.Set(packageId, version);

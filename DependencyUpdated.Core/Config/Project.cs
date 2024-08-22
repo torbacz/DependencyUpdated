@@ -12,7 +12,7 @@ public sealed class Project : IValidatableObject
     
     public string[] Directories { get; set; } = ArraySegment<string>.Empty.ToArray();
 
-    public string[] Groups { get; set; } = ["*"];
+    public string[] Groups { get; set; } = ArraySegment<string>.Empty.ToArray();
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

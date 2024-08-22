@@ -82,7 +82,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName)
     {
-        var prTitile = "[AutoUpdate] Update dependencies";
+        var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
         var prDescription = CreatePrDescription(updates);
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName);
         var configValue = config.Value.AzureDevOps;
