@@ -74,7 +74,7 @@ namespace DependencyUpdated
 
                     var uniqueListOfDependencies = allDepencenciesToUpdate.DistinctBy(x => x.Name).ToList();
 
-                    foreach (var group in configEntry.Groups)
+                    foreach (var group in configEntry.GetGroups())
                     {
                         var matchesForGroup = uniqueListOfDependencies
                             .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
