@@ -93,7 +93,7 @@ namespace DependencyUpdated
                         if (allUpdates.Count != 0)
                         {
                              repositoryProvider.CommitChanges(repositoryPath, projectName, group);
-                             repositoryProvider.SubmitPullRequest(allUpdates, projectName, group).Wait();
+                             repositoryProvider.SubmitPullRequest(allUpdates.DistinctBy(x=>x.PackageName).ToArray(), projectName, group).Wait();
                         }
                     }
                 }
