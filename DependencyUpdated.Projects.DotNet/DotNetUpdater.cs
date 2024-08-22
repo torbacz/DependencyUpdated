@@ -19,36 +19,24 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         "*.nfproj",
         "directory.build.props"
     ];
-
-    public async Task<IReadOnlyCollection<UpdateResult>> UpdateProject(string searchPath, Project projectConfiguration)
+    
+    public IEnumerable<string> GetAllProjectFiles(string searchPath)
     {
-        if (!Path.Exists(searchPath))
-        {
-            throw new FileNotFoundException("Search path not found", searchPath);
-        }
-
-        var projectFiles = GetAllProjectFiles(searchPath);
-        var allUpdates = new List<UpdateResult>();
-        foreach (var project in projectFiles)
-        {
-            var result = await HandleProjectUpdate(project, projectConfiguration);
-            allUpdates.AddRange(result);
-        }
-        
-        return allUpdates;
+        return ValidDotnetPatterns.SelectMany(dotnetPattern =>
+            Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories));
     }
 
-    private IEnumerable<string> GetAllProjectFiles(string searchPath)
-    {
-        return ValidDotnetPatterns.SelectMany(dotnetPattern => Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories));
-    }
-
-    private async Task<IReadOnlyCollection<UpdateResult>> HandleProjectUpdate(string fullPath, Project projectConfiguration)
+    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(string fullPath, ICollection<DependencyDetails> dependenciesToUpdate)
     {
         logger.Information("Processing: {FullPath} project", fullPath);
+        return UpdateCsProj(fullPath, dependenciesToUpdate);
+    }
+
+    public async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath, Project projectConfiguration)
+    {
         var nugets = ParseCsproj(fullPath);
-        var nugetsToUpdate = new Dictionary<string, NuGetVersion>();
-        var returnList = new List<UpdateResult>();
+
+        var returnList = new List<DependencyDetails>();
         foreach (var nuget in nugets)
         {
             logger.Verbose("Processing {PackageName}:{PackageVersion}", nuget.Key, nuget.Value);
@@ -62,23 +50,25 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             if (latestVersion.Version > nuget.Value.Version)
             {
                 logger.Information("{PacakgeName} new version {Version} available", nuget.Key, latestVersion);
-                nugetsToUpdate.Add(nuget.Key, latestVersion);
-                returnList.Add(new UpdateResult(nuget.Key, nuget.Value.ToNormalizedString(),
-                    latestVersion.ToNormalizedString()));
+                returnList.Add(new DependencyDetails(nuget.Key, latestVersion.Version));
             }
         }
 
-        UpdateCsProj(fullPath, nugetsToUpdate);
         return returnList;
     }
 
-    private void UpdateCsProj(string fullPath, Dictionary<string, NuGetVersion> nugetsToUpdate)
+    private IReadOnlyCollection<UpdateResult> UpdateCsProj(string fullPath, ICollection<DependencyDetails> packagesToUpdate)
     {
-        var document = XDocument.Load(fullPath);
+        var results = new List<UpdateResult>();
+        var document = XDocument.Load(fullPath, LoadOptions.PreserveWhitespace);
+
+        var nugetsToUpdate = packagesToUpdate.ToDictionary(x => x.Name, x => x.Version);
+        
         if (document.Root is null)
         {
             throw new InvalidOperationException("Root object is null");
         }
+        
         var packageReferences = document.Root.Elements("ItemGroup")
             .Elements("PackageReference");
 
@@ -86,12 +76,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         {
             var includeAttribute = packageReference.Attribute("Include");
             var versionAttribute = packageReference.Attribute("Version");
-            if (includeAttribute is null)
-            {
-                continue;
-            }
-
-            if (versionAttribute is null)
+            if (includeAttribute is null || versionAttribute is null)
             {
                 continue;
             }
@@ -103,7 +88,8 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
                 continue;
             }
             
-            versionAttribute.SetValue(newVersion.ToNormalizedString());
+            versionAttribute.SetValue(newVersion.ToString());
+            results.Add(new UpdateResult(packageName, versionAttribute.Value, newVersion.ToString()));
         }
 
         var settings = new XmlWriterSettings
@@ -111,9 +97,14 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             OmitXmlDeclaration = true,
             Indent = true,
         };
+        
+        if (results.Count > 0)
+        {
+            using var xmlWriter = XmlWriter.Create(fullPath, settings);
+            document.Save(xmlWriter);
+        }
 
-        using var xmlWriter = XmlWriter.Create(fullPath, settings);
-        document.Save(xmlWriter);
+        return results;
     }
 
     private async Task<NuGetVersion?> GetLatestVersion(string packageId, Project projectConfiguration)
@@ -148,24 +139,24 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var version = default(NuGetVersion?);
         foreach (var repository in repositories)
         {
-            var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(
-                packageId,
-                new SourceCacheContext(),
-                NullLogger.Instance,
-                CancellationToken.None);
-            var maxVersion = versions.Where(x => !x.IsPrerelease).Max();
-            if (version is null || (maxVersion is not null && maxVersion >= version))
-            {
-                version = maxVersion;
-            }
+                var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
+                var versions = await findPackageByIdResource.GetAllVersionsAsync(
+                    packageId,
+                    new SourceCacheContext(),
+                    NullLogger.Instance,
+                    CancellationToken.None);
+                var maxVersion = versions.Where(x => !x.IsPrerelease).Max();
+                if (version is null || (maxVersion is not null && maxVersion >= version))
+                {
+                    version = maxVersion;
+                }
         }
 
         memoryCache.Set(packageId, version);
         return version;
     }
 
-    private static Dictionary<string, NuGetVersion> ParseCsproj(string path)
+    private static Dictionary<string, DependencyDetails> ParseCsproj(string path)
     {
         var document = XDocument.Load(path);
         if (document.Root is null)
@@ -175,7 +166,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var packageReferences = document.Root.Elements("ItemGroup")
             .Elements("PackageReference");
 
-        var nugets = new Dictionary<string, NuGetVersion>();
+        var nugets = new Dictionary<string, DependencyDetails>();
         foreach (var packageReference in packageReferences)
         {
             var includeAttribute = packageReference.Attribute("Include");
@@ -183,8 +174,9 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
 
             if (includeAttribute != null && versionAttribute != null)
             {
-                var version = NuGetVersion.Parse(versionAttribute.Value);
-                nugets[includeAttribute.Value] = version;
+                var version = NuGetVersion.Parse(versionAttribute.Value).Version;
+                nugets[includeAttribute.Value] =
+                    new DependencyDetails(includeAttribute.Value, version);
             }
         }
 

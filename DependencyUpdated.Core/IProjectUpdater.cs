@@ -3,6 +3,10 @@ using DependencyUpdated.Core.Config;
 namespace DependencyUpdated.Core;
 
 public interface IProjectUpdater
-{
-    public Task<IReadOnlyCollection<UpdateResult>> UpdateProject(string searchPath, Project projectConfiguration);
+{ 
+    Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath, Project projectConfiguration);
+    
+    IEnumerable<string> GetAllProjectFiles(string searchPath);
+    
+    IReadOnlyCollection<UpdateResult> HandleProjectUpdate(string fullPath, ICollection<DependencyDetails> dependenciesToUpdate);
 }
