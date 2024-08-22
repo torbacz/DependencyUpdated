@@ -31,9 +31,9 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
     }
 
-    public void SwitchToUpdateBranch(string repositoryPath, string projectName)
+    public void SwitchToUpdateBranch(string repositoryPath, string projectName, string group)
     {
-        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName);
+        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, gitBranchName);
         using (var repo = new Repository(repositoryPath)) 
         {
@@ -53,9 +53,10 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
     }
 
-    public void CommitChanges(string repositoryPath, string projectName)
+    
+    public void CommitChanges(string repositoryPath, string projectName, string group)
     {
-        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName);
+        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
         using (var repo = new Repository(repositoryPath))
         {
@@ -80,11 +81,11 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
     }
 
-    public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName)
+    public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
     {
         var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
         var prDescription = CreatePrDescription(updates);
-        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName);
+        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         var configValue = config.Value.AzureDevOps;
         var sourceBranch = $"refs/heads/{gitBranchName}";
         var targetBranch = $"refs/heads/{configValue.TargetBranchName}";
@@ -151,8 +152,8 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         return stringBuilder.ToString();
     }
 
-    private static string CreateGitBranchName(string projectName, string branchName)
+    private static string CreateGitBranchName(string projectName, string branchName, string group)
     {
-        return $"{projectName.ToLower()}/{branchName.ToLower()}";
+        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*","-asterix-")}";
     }
 }

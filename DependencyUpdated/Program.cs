@@ -80,8 +80,8 @@ namespace DependencyUpdated
                             .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
                         uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
                         
-                        var projectName = ($"{configEntry.Name}-group-{group}").Replace("*","-asterix-") ;
-                        repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName);
+                        var projectName = configEntry.Name;
+                        repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
                         
                         var allUpdates = new List<UpdateResult>();
                         foreach (var projectFile in projectFiles)
@@ -92,8 +92,8 @@ namespace DependencyUpdated
 
                         if (allUpdates.Count != 0)
                         {
-                             repositoryProvider.CommitChanges(repositoryPath, projectName);
-                             repositoryProvider.SubmitPullRequest(allUpdates, projectName).Wait();
+                             repositoryProvider.CommitChanges(repositoryPath, projectName, group);
+                             repositoryProvider.SubmitPullRequest(allUpdates, projectName, group).Wait();
                         }
                     }
                 }
