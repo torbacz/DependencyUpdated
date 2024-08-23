@@ -93,48 +93,73 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests?api-version=6.0";
 
         logger.Information("Creating new PR");
-        using (var client = new HttpClient())
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+            Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
+        var pr = new PullRequest(sourceBranch, targetBranch, prTitile, prDescription);
+            
+        var jsonString = JsonSerializer.Serialize(pr);
+        var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            
+        var result = await client.PostAsync(baseUrl, content);
+        result.EnsureSuccessStatusCode();
+            
+        if (result.StatusCode == HttpStatusCode.NonAuthoritativeInformation)
         {
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
-            var pr = new PullRequest(sourceBranch, targetBranch, prTitile, prDescription);
+            throw new Exception("Invalid PAT token provided");
+        }
             
-            var jsonString = JsonSerializer.Serialize(pr);
-            var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+        var response = await result.Content.ReadAsStringAsync(); 
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options);
+        if (responseObject is null)
+        {
+            throw new Exception("Missing response from API");
+        }
             
-            var result = await client.PostAsync(baseUrl, content);
+        logger.Information("New PR created {Id}", responseObject.PullRequestId);
+        if (configValue.AutoComplete)
+        {
+            logger.Information("Setting autocomplete for PR {Id}", responseObject.PullRequestId);
+            baseUrl =
+                $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests/{responseObject.PullRequestId}?api-version=6.0";
+            var autoComplete = new PullRequestUpdate(responseObject.CreatedBy,
+                new GitPullRequestCompletionOptions(true, false, GitPullRequestMergeStrategy.Squash));
+            jsonString = JsonSerializer.Serialize(autoComplete);
+            content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            result = await client.PatchAsync(baseUrl, content);
             result.EnsureSuccessStatusCode();
-            
-            if (result.StatusCode == HttpStatusCode.NonAuthoritativeInformation)
+        }
+        
+        if (configValue.WorkItemId.HasValue)
+        {
+            logger.Information("Setting work item {ConfigValueWorkItemId} relation to {PullRequestId}",
+                configValue.WorkItemId.Value, responseObject.PullRequestId);
+            var workItemUpdateUrl = new Uri(
+                $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/wit/workitems/{configValue.WorkItemId.Value}?api-version=6.0");
+            var patchValue = new[]
             {
-                throw new Exception("Invalid PAT token provided");
-            }
-            
-            var response = await result.Content.ReadAsStringAsync(); 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
+                new
+                {
+                    op = "add",
+                    path = "/relations/-",
+                    value = new
+                    {
+                        rel = "ArtifactLink",
+                        url = responseObject.ArtifactId,
+                        attributes = new { name = "Pull Request" }
+                    }
+                }
             };
-            var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options);
-            if (responseObject is null)
-            {
-                throw new Exception("Missing response from API");
-            }
-            
-            logger.Information("New PR created {Id}", responseObject.PullRequestId);
-            if (configValue.AutoComplete)
-            {
-                logger.Information("Setting autocomplete for PR {Id}", responseObject.PullRequestId);
-                baseUrl =
-                    $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests/{responseObject.PullRequestId}?api-version=6.0";
-                var autoComplete = new PullRequestUpdate(responseObject.CreatedBy,
-                    new GitPullRequestCompletionOptions(true, false, GitPullRequestMergeStrategy.Squash));
-                jsonString = JsonSerializer.Serialize(autoComplete);
-                content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-                result = await client.PatchAsync(baseUrl, content);
-                result.EnsureSuccessStatusCode();
-            }
+
+            jsonString = JsonSerializer.Serialize(patchValue);
+            content = new StringContent(jsonString, Encoding.UTF8, "application/json-patch+json");
+            result = await client.PatchAsync(workItemUpdateUrl, content);
+            result.EnsureSuccessStatusCode();
         }
     }
 

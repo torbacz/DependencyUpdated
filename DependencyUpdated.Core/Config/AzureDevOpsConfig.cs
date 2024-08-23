@@ -15,6 +15,8 @@ public class AzureDevOpsConfig : IValidatableObject
     public string? Project { get; set; }
 
     public string? Repository { get; set; }
+    
+    public int? WorkItemId { get; set; }
 
     public string TargetBranchName { get; set; } = "dev";
 
