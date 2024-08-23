@@ -7,7 +7,8 @@
       "PAT": "",
       "Organization": "",
       "Project": "",
-      "Repository": ""
+      "Repository": "",
+      "WorkItemId": null
     },
     "PullRequestType": "AzureDevOps",
     "Projects": [
