@@ -1,0 +1,34 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set version number
+      run: echo "PACKAGE_VERSION=1.0.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: Pack
+      run: dotnet pack -p:PackageVersion=$PACKAGE_VERSION -c Release
+
+    - name: Push generated package to NuGet registry
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: dotnet nuget push src/SdkGenerator/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{secrets.NUGET_API_KEY}}
