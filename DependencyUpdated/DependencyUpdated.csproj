@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         
-        <PackageId>DependencyUpdatedTool</PackageId>
+        <PackageId>DependencyUpdaterTool</PackageId>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>dut</ToolCommandName>
     </PropertyGroup>
