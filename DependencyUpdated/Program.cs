@@ -47,8 +47,6 @@ namespace DependencyUpdated
 
             foreach (var configEntry in config.Value.Projects)
             {
-                repositoryProvider.SwitchToDefaultBranch(repositoryPath);
-
                 var updater = _serviceProvider.GetRequiredKeyedService<IProjectUpdater>(configEntry.Type);
                
                 foreach (var project in configEntry.Directories)
@@ -64,7 +62,6 @@ namespace DependencyUpdated
                     {
                         var dependencyToUpdate = await updater.ExtractAllPackagesThatNeedToBeUpdated(projectFile, configEntry);
                         allDepencenciesToUpdate.AddRange(dependencyToUpdate);
-                        
                     }
 
                     if (allDepencenciesToUpdate.Count == 0)
@@ -74,13 +71,19 @@ namespace DependencyUpdated
 
                     var uniqueListOfDependencies = allDepencenciesToUpdate.DistinctBy(x => x.Name).ToList();
 
-                    foreach (var group in configEntry.GetGroups())
+                    foreach (var group in configEntry.Groups)
                     {
                         var matchesForGroup = uniqueListOfDependencies
                             .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
                         uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
+
+                        if (matchesForGroup.Length == 0)
+                        {
+                            continue;
+                        }
                         
                         var projectName = configEntry.Name;
+                        repositoryProvider.SwitchToDefaultBranch(repositoryPath);
                         repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
                         
                         var allUpdates = new List<UpdateResult>();
