@@ -176,7 +176,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         throw new NotSupportedException($"Version configuration {projectConfiguration.Version} is not supported");
     }
 
-    private static ICollection<DependencyDetails> ParseCsproj(string path)
+    private static HashSet<DependencyDetails> ParseCsproj(string path)
     {
         var document = XDocument.Load(path);
         if (document.Root is null)
@@ -186,7 +186,7 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         var packageReferences = document.Root.Elements("ItemGroup")
             .Elements("PackageReference");
 
-        var nugets = new List<DependencyDetails>();
+        var nugets = new HashSet<DependencyDetails>();
         foreach (var packageReference in packageReferences)
         {
             var includeAttribute = packageReference.Attribute("Include");
@@ -198,12 +198,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             }
 
             var name = includeAttribute.Value;
-
-            if (nugets.Any(x => x.Name == name))
-            {
-                continue;
-            }
-            
             var version = NuGetVersion.Parse(versionAttribute.Value).Version;
             nugets.Add(new DependencyDetails(name, version));
         }
