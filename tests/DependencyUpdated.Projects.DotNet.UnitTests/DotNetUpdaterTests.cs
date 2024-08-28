@@ -28,7 +28,7 @@ public class DotNetUpdaterTests
     public void GetAllProjectFiles_Should_ReturnAllProjects()
     {
         // Arrange
-        var expectedResult = new[] { "Projects\\SampleProject.csproj" }; 
+        var expectedResult = new[] { Path.Combine("Projects", "SampleProject.csproj") };
         
         // Act
         var result = _target.GetAllProjectFiles(_searchPath);
@@ -45,7 +45,7 @@ public class DotNetUpdaterTests
     public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdatePatchVersion()
     {
         // Arrange
-        var path = "Projects\\SampleProject.csproj";
+        var path = Path.Combine("Projects", "SampleProject.csproj");
         var config = new Project() { Version = VersionUpdateType.Patch, };
         var expectedResult = new List<DependencyDetails>()
         {
@@ -66,7 +66,7 @@ public class DotNetUpdaterTests
     public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdateMinorVersion()
     {
         // Arrange
-        var path = "Projects\\SampleProject.csproj";
+        var path = Path.Combine("Projects", "SampleProject.csproj");
         var config = new Project() { Version = VersionUpdateType.Minor, };
         var expectedResult = new List<DependencyDetails>()
         {
@@ -87,7 +87,7 @@ public class DotNetUpdaterTests
     public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdateMajorVersion()
     {
         // Arrange
-        var path = "Projects\\SampleProject.csproj";
+        var path = Path.Combine("Projects", "SampleProject.csproj");
         var config = new Project() { Version = VersionUpdateType.Major, };
         var expectedResult = new List<DependencyDetails>()
         {
