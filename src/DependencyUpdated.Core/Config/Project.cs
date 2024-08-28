@@ -4,21 +4,17 @@ namespace DependencyUpdated.Core.Config;
 
 public sealed class Project : IValidatableObject
 {
-    private string[] _groups = ["*"];
-    
     public ProjectType Type { get; set; }
+    
+    public VersionUpdateType Version { get; set; }
 
     public string Name { get; set; } = default!;
-    
-    public string[] DependencyConfigurations { get; set; } = ArraySegment<string>.Empty.ToArray();
+
+    public string[] DependencyConfigurations { get; set; } = ["https://api.nuget.org/v3/index.json"];
     
     public string[] Directories { get; set; } = ArraySegment<string>.Empty.ToArray();
 
-    public string[] Groups
-    {
-        get => _groups;
-        set => _groups = value;
-    }
+    public string[] Groups { get; set; } = ["*"];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
