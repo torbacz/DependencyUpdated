@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj" />
+      <ProjectReference Include="..\..\src\DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj" />
     </ItemGroup>
 
 </Project>
