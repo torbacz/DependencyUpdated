@@ -1,41 +1,37 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
 using DependencyUpdated.Repositories.AzureDevOps.Dto;
 using LibGit2Sharp;
 using Microsoft.Extensions.Options;
 using Serilog;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
-internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterConfig> config, ILogger logger) : IRepositoryProvider
+internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterConfig> config, ILogger logger)
+    : IRepositoryProvider
 {
     private const string GitCommitMessage = "Bump dependencies";
-    
+
     public void SwitchToDefaultBranch(string repositoryPath)
     {
         var branchName = config.Value.AzureDevOps.TargetBranchName;
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
-        using (var repo = new Repository(repositoryPath)) 
-        {
-            var branch = repo.Branches[branchName];
-            if (branch == null)
-            {
-                throw new Exception($"Branch {branchName} doesn't exists");
-            }
+        using var repo = new Repository(repositoryPath);
+        var branch = repo.Branches[branchName] ?? 
+                     throw new Exception($"Branch {branchName} doesn't exists");
 
-            Commands.Checkout(repo, branch);
-        }
+        Commands.Checkout(repo, branch);
     }
 
     public void SwitchToUpdateBranch(string repositoryPath, string projectName, string group)
     {
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, gitBranchName);
-        using (var repo = new Repository(repositoryPath)) 
+        using (var repo = new Repository(repositoryPath))
         {
             var branch = repo.Branches[gitBranchName];
             if (branch == null)
@@ -53,7 +49,6 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
     }
 
-    
     public void CommitChanges(string repositoryPath, string projectName, string group)
     {
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
@@ -98,29 +93,26 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
             Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
         var pr = new PullRequest(sourceBranch, targetBranch, prTitile, prDescription);
-            
+
         var jsonString = JsonSerializer.Serialize(pr);
         var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-            
+
         var result = await client.PostAsync(baseUrl, content);
         result.EnsureSuccessStatusCode();
-            
+
         if (result.StatusCode == HttpStatusCode.NonAuthoritativeInformation)
         {
             throw new Exception("Invalid PAT token provided");
         }
-            
-        var response = await result.Content.ReadAsStringAsync(); 
+
+        var response = await result.Content.ReadAsStringAsync();
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
         };
-        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options);
-        if (responseObject is null)
-        {
-            throw new Exception("Missing response from API");
-        }
-            
+        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options) ?? 
+                             throw new Exception("Missing response from API");
+
         logger.Information("New PR created {Id}", responseObject.PullRequestId);
         if (configValue.AutoComplete)
         {
@@ -134,7 +126,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             result = await client.PatchAsync(baseUrl, content);
             result.EnsureSuccessStatusCode();
         }
-        
+
         if (configValue.WorkItemId.HasValue)
         {
             logger.Information("Setting work item {ConfigValueWorkItemId} relation to {PullRequestId}",
@@ -162,6 +154,11 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             result.EnsureSuccessStatusCode();
         }
     }
+    
+    private static string CreateGitBranchName(string projectName, string branchName, string group)
+    {
+        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*", "-asterix-")}";
+    }
 
     private string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
     {
@@ -173,12 +170,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         {
             stringBuilder.AppendLine($"Bump {update.PackageName}: {update.OldVersion} -> {update.NewVersion}");
         }
-        
-        return stringBuilder.ToString();
-    }
 
-    private static string CreateGitBranchName(string projectName, string branchName, string group)
-    {
-        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*","-asterix-")}";
+        return stringBuilder.ToString();
     }
 }
