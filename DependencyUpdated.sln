@@ -1,17 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated", "DependencyUpdated\DependencyUpdated.csproj", "{8F92D3D1-EB23-4CA3-BCE9-ACC6327993E1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated", "src/DependencyUpdated\DependencyUpdated.csproj", "{8F92D3D1-EB23-4CA3-BCE9-ACC6327993E1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFiles", "{BC1D92B0-5DBD-4BAA-9741-B61B1A1DD8C2}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		stylecop.json = stylecop.json
+		directory.build.props = directory.build.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Core", "DependencyUpdated.Core\DependencyUpdated.Core.csproj", "{F346E159-924F-4206-B2BA-D5B34F91B9C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Core", "src/DependencyUpdated.Core\DependencyUpdated.Core.csproj", "{F346E159-924F-4206-B2BA-D5B34F91B9C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Projects.DotNet", "DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj", "{D10799F8-DCBB-442E-85C0-2F473C716D01}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Projects.DotNet", "src/DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj", "{D10799F8-DCBB-442E-85C0-2F473C716D01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Repositories.AzureDevOps", "DependencyUpdated.Repositories.AzureDevOps\DependencyUpdated.Repositories.AzureDevOps.csproj", "{A9181ADC-801D-45BE-B091-CF6C14E6F702}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Repositories.AzureDevOps", "src/DependencyUpdated.Repositories.AzureDevOps\DependencyUpdated.Repositories.AzureDevOps.csproj", "{A9181ADC-801D-45BE-B091-CF6C14E6F702}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{35DCECB9-4FF1-4277-8C84-B905A5D1E693}"
 	ProjectSection(SolutionItems) = preProject
@@ -19,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{35DCECB9
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Projects.DotNet.UnitTests", "tests\DependencyUpdated.Projects.DotNet.UnitTests\DependencyUpdated.Projects.DotNet.UnitTests.csproj", "{0F4B408D-9B4A-4621-BD67-AB80EB74E14B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0D271967-C5D2-425F-883E-FFCDC51A62A2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,5 +53,9 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0F4B408D-9B4A-4621-BD67-AB80EB74E14B} = {35DCECB9-4FF1-4277-8C84-B905A5D1E693}
+		{8F92D3D1-EB23-4CA3-BCE9-ACC6327993E1} = {0D271967-C5D2-425F-883E-FFCDC51A62A2}
+		{F346E159-924F-4206-B2BA-D5B34F91B9C0} = {0D271967-C5D2-425F-883E-FFCDC51A62A2}
+		{D10799F8-DCBB-442E-85C0-2F473C716D01} = {0D271967-C5D2-425F-883E-FFCDC51A62A2}
+		{A9181ADC-801D-45BE-B091-CF6C14E6F702} = {0D271967-C5D2-425F-883E-FFCDC51A62A2}
 	EndGlobalSection
 EndGlobal
