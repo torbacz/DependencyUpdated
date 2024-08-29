@@ -24,7 +24,7 @@ jobs:
       run: dotnet restore
       
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore -c Release
     
     - name: Pack
       run: dotnet pack -p:PackageVersion=$PACKAGE_VERSION -c Release
