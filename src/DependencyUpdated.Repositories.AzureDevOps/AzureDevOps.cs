@@ -22,7 +22,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
         using var repo = new Repository(repositoryPath);
         var branch = repo.Branches[branchName] ?? 
-                     throw new Exception($"Branch {branchName} doesn't exists");
+                     throw new InvalidOperationException($"Branch {branchName} doesn't exists");
 
         Commands.Checkout(repo, branch);
     }
@@ -102,7 +102,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
         if (result.StatusCode == HttpStatusCode.NonAuthoritativeInformation)
         {
-            throw new Exception("Invalid PAT token provided");
+            throw new InvalidOperationException("Invalid PAT token provided");
         }
 
         var response = await result.Content.ReadAsStringAsync();
@@ -111,7 +111,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             PropertyNameCaseInsensitive = true,
         };
         var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options) ?? 
-                             throw new Exception("Missing response from API");
+                             throw new InvalidOperationException("Missing response from API");
 
         logger.Information("New PR created {Id}", responseObject.PullRequestId);
         if (configValue.AutoComplete)
