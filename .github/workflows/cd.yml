@@ -30,4 +30,4 @@ jobs:
       run: dotnet pack -p:PackageVersion=$PACKAGE_VERSION -c Release
 
     - name: Push generated package to NuGet registry
-      run: dotnet nuget push DependencyUpdated/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push src/DependencyUpdated/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
