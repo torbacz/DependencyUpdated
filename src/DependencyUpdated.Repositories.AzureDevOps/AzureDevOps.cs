@@ -61,9 +61,9 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var author = new Signature(config.Value.AzureDevOps.Username, config.Value.AzureDevOps.Email,
             timeProvider.GetUtcNow());
         repo.Commit(GitCommitMessage, author, author);
-        var options = new PushOptions();
-        options.CredentialsProvider = CreateGitCredentialsProvider();
-        repo.Network.Push(repo.Branches[gitBranchName], options);
+        var branch = GetGitBranch(repo, gitBranchName);
+        var options = new PushOptions { CredentialsProvider = CreateGitCredentialsProvider() };
+        repo.Network.Push(branch, options);
     }
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
@@ -149,14 +149,15 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     private Branch? GetGitBranch(Repository repo, string branchName)
     {
+        var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
+        Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
+        
         var branch = repo.Branches[branchName];
         if (branch is not null)
         {
             return branch;
         }
-
-        var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
-        Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
+        
         return repo.Branches[$"{RemoteName}/{branchName}"];
     }
 
