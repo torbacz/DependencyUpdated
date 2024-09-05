@@ -2,6 +2,7 @@ using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
 using DependencyUpdated.Repositories.AzureDevOps.Dto;
 using LibGit2Sharp;
+using LibGit2Sharp.Handlers;
 using Microsoft.Extensions.Options;
 using Serilog;
 using System.Net;
@@ -15,14 +16,22 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
     : IRepositoryProvider
 {
     private const string GitCommitMessage = "Bump dependencies";
+    private const string RemoteName = "origin";
 
     public void SwitchToDefaultBranch(string repositoryPath)
     {
         var branchName = config.Value.AzureDevOps.TargetBranchName;
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
         using var repo = new Repository(repositoryPath);
-        var branch = repo.Branches[branchName] ?? 
-                     throw new InvalidOperationException($"Branch {branchName} doesn't exists");
+
+        var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
+        Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
+        var branch = repo.Branches[branchName] ?? repo.Branches[$"{RemoteName}/{branchName}"];
+
+        if (branch == null)
+        {
+            throw new InvalidOperationException($"Branch {branchName} doesn't exist");
+        }
 
         Commands.Checkout(repo, branch);
     }
@@ -53,27 +62,14 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
     {
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
-        using (var repo = new Repository(repositoryPath))
-        {
-            Commands.Stage(repo, "*");
-            var author = new Signature(config.Value.AzureDevOps.Username, config.Value.AzureDevOps.Email,
-                timeProvider.GetUtcNow());
-            repo.Commit(GitCommitMessage, author, author);
-            var options = new PushOptions();
-
-            if (!string.IsNullOrEmpty(config.Value.AzureDevOps.Username) &&
-                !string.IsNullOrEmpty(config.Value.AzureDevOps.PAT))
-            {
-                options.CredentialsProvider = (_, _, _) =>
-                    new UsernamePasswordCredentials()
-                    {
-                        Username = config.Value.AzureDevOps.Username,
-                        Password = config.Value.AzureDevOps.PAT
-                    };
-            }
-
-            repo.Network.Push(repo.Branches[gitBranchName], options);
-        }
+        using var repo = new Repository(repositoryPath);
+        Commands.Stage(repo, "*");
+        var author = new Signature(config.Value.AzureDevOps.Username, config.Value.AzureDevOps.Email,
+            timeProvider.GetUtcNow());
+        repo.Commit(GitCommitMessage, author, author);
+        var options = new PushOptions();
+        options.CredentialsProvider = CreateGitCredentialsProvider();
+        repo.Network.Push(repo.Branches[gitBranchName], options);
     }
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
@@ -106,11 +102,8 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
 
         var response = await result.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-        };
-        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options) ?? 
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
+        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options) ??
                              throw new InvalidOperationException("Missing response from API");
 
         logger.Information("New PR created {Id}", responseObject.PullRequestId);
@@ -154,10 +147,10 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             result.EnsureSuccessStatusCode();
         }
     }
-    
+
     private static string CreateGitBranchName(string projectName, string branchName, string group)
     {
-        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*", "-asterix-")}";
+        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*", "asterix")}";
     }
 
     private string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
@@ -172,5 +165,23 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
 
         return stringBuilder.ToString();
+    }
+
+    private CredentialsHandler? CreateGitCredentialsProvider()
+    {
+        if (string.IsNullOrEmpty(config.Value.AzureDevOps.Username))
+        {
+            return null;
+        }
+
+        if (string.IsNullOrEmpty(config.Value.AzureDevOps.PAT))
+        {
+            return null;
+        }
+
+        return (_, _, _) => new UsernamePasswordCredentials()
+        {
+            Username = config.Value.AzureDevOps.Username, Password = config.Value.AzureDevOps.PAT
+        };
     }
 }

@@ -30,6 +30,7 @@ public static class Program
         ConfigureServices();
 
         var config = _serviceProvider.GetRequiredService<IOptions<UpdaterConfig>>();
+        config.Value.ApplyDefaultValues();
         var validationResult = config.Value.Validate(new ValidationContext(config.Value)).ToList();
         if (validationResult.Count != 0)
         {
@@ -39,11 +40,7 @@ public static class Program
 
         var repositoryProvider =
             _serviceProvider.GetRequiredKeyedService<IRepositoryProvider>(config.Value.RepositoryType);
-        var repositoryPath = string.IsNullOrEmpty(options.RepositoryPath)
-            ? Environment.CurrentDirectory
-            : options.RepositoryPath;
-
-        Directory.SetCurrentDirectory(repositoryPath);
+        var repositoryPath = Environment.CurrentDirectory;
 
         foreach (var configEntry in config.Value.Projects)
         {

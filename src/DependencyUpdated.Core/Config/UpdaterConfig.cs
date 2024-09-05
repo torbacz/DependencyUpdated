@@ -46,4 +46,12 @@ public sealed class UpdaterConfig : IValidatableObject
             }
         }
     }
+
+    public void ApplyDefaultValues()
+    {
+        foreach (var project in Projects)
+        {
+            project.ApplyDefaultValue();
+        }
+    }
 }

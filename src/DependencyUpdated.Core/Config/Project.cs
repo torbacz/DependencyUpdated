@@ -10,11 +10,11 @@ public sealed class Project : IValidatableObject
 
     public string Name { get; set; } = default!;
 
-    public string[] DependencyConfigurations { get; set; } = ["https://api.nuget.org/v3/index.json"];
+    public string[] DependencyConfigurations { get; set; } = [];
     
-    public string[] Directories { get; set; } = ArraySegment<string>.Empty.ToArray();
+    public string[] Directories { get; set; } = [];
 
-    public string[] Groups { get; set; } = ["*"];
+    public string[] Groups { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -36,6 +36,19 @@ public sealed class Project : IValidatableObject
         if (Groups.Length == 0)
         {
             yield return new ValidationResult($"Missing ${nameof(Groups)}.");
+        }
+    }
+
+    public void ApplyDefaultValue()
+    {
+        if (DependencyConfigurations.Length == 0 && Type == ProjectType.DotNet)
+        {
+            DependencyConfigurations = ["https://api.nuget.org/v3/index.json"];
+        }
+
+        if (Groups.Length == 0)
+        {
+            Groups = ["*"];
         }
     }
 }
