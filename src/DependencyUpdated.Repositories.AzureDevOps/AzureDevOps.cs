@@ -23,16 +23,12 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var branchName = config.Value.AzureDevOps.TargetBranchName;
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
         using var repo = new Repository(repositoryPath);
-
-        var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
-        Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
-        var branch = repo.Branches[branchName] ?? repo.Branches[$"{RemoteName}/{branchName}"];
-
+        var branch = GetGitBranch(repo, branchName);
         if (branch == null)
         {
             throw new InvalidOperationException($"Branch {branchName} doesn't exist");
         }
-
+        
         Commands.Checkout(repo, branch);
     }
 
@@ -40,22 +36,20 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
     {
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, gitBranchName);
-        using (var repo = new Repository(repositoryPath))
+        using var repo = new Repository(repositoryPath);
+        var branch = GetGitBranch(repo, gitBranchName);
+        if (branch == null)
         {
-            var branch = repo.Branches[gitBranchName];
-            if (branch == null)
+            logger.Information("Branch {Branch} does not exists. Creating", gitBranchName);
+            branch = repo.CreateBranch(gitBranchName);
+            branch = repo.Branches.Update(branch, updater =>
             {
-                logger.Information("Branch {Branch} does not exists. Creating", gitBranchName);
-                branch = repo.CreateBranch(gitBranchName);
-                branch = repo.Branches.Update(branch, updater =>
-                {
-                    updater.UpstreamBranch = branch.CanonicalName;
-                    updater.Remote = "origin";
-                });
-            }
-
-            Commands.Checkout(repo, branch);
+                updater.UpstreamBranch = branch.CanonicalName;
+                updater.Remote = RemoteName;
+            });
         }
+
+        Commands.Checkout(repo, branch);
     }
 
     public void CommitChanges(string repositoryPath, string projectName, string group)
@@ -150,7 +144,20 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     private static string CreateGitBranchName(string projectName, string branchName, string group)
     {
-        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace("*", "asterix")}";
+        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace(".", "/").Replace("*", "asterix")}";
+    }
+
+    private Branch? GetGitBranch(Repository repo, string branchName)
+    {
+        var branch = repo.Branches[branchName];
+        if (branch is not null)
+        {
+            return branch;
+        }
+
+        var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
+        Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
+        return repo.Branches[$"{RemoteName}/{branchName}"];
     }
 
     private string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
