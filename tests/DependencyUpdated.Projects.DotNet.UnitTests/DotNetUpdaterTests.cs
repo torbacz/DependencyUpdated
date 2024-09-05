@@ -46,7 +46,8 @@ public class DotNetUpdaterTests
     {
         // Arrange
         var path = Path.Combine("Projects", "SampleProject.csproj");
-        var config = new Project() { Version = VersionUpdateType.Patch, };
+        var config = new Project() { Version = VersionUpdateType.Patch, Type = ProjectType.DotNet };
+        config.ApplyDefaultValue();
         var expectedResult = new List<DependencyDetails>()
         {
             new("Serilog", new Version(3,0,1, 0))
@@ -67,7 +68,8 @@ public class DotNetUpdaterTests
     {
         // Arrange
         var path = Path.Combine("Projects", "SampleProject.csproj");
-        var config = new Project() { Version = VersionUpdateType.Minor, };
+        var config = new Project() { Version = VersionUpdateType.Minor, Type = ProjectType.DotNet };
+        config.ApplyDefaultValue();
         var expectedResult = new List<DependencyDetails>()
         {
             new("Serilog", new Version(3,1,1, 0))
@@ -88,7 +90,8 @@ public class DotNetUpdaterTests
     {
         // Arrange
         var path = Path.Combine("Projects", "SampleProject.csproj");
-        var config = new Project() { Version = VersionUpdateType.Major, };
+        var config = new Project() { Version = VersionUpdateType.Major, Type = ProjectType.DotNet };
+        config.ApplyDefaultValue();
         var expectedResult = new List<DependencyDetails>()
         {
             new("Serilog", new Version(4,0,1, 0))
