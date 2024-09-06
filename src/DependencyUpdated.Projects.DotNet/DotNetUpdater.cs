@@ -197,8 +197,9 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
                 continue;
             }
 
+            var oldPackageVersion = versionAttribute.Value;
             versionAttribute.SetValue(newVersion.ToString());
-            results.Add(new UpdateResult(packageName, versionAttribute.Value, newVersion.ToString()));
+            results.Add(new UpdateResult(packageName, oldPackageVersion, newVersion.ToString()));
         }
 
         var settings = new XmlWriterSettings { OmitXmlDeclaration = true, Indent = true, };
