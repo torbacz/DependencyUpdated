@@ -26,7 +26,8 @@ dut
 ```
 
 ## Config
-TODO
+The most recent config can be found here:
+`https://github.com/torbacz/DependencyUpdated/blob/main/src/DependencyUpdated/config.json`
 
 Note: Each config value can be overridden by environment variables. For example if you want to update
 
@@ -39,6 +40,13 @@ Note: Each config value can be overridden by environment variables. For example 
 ```
 
 Set UpdaterConfig__RepositoryType variable (all follows standard .NET naming conversion, check [docs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-8.0) for more info)
+
+## Local development
+When working on local machine, there are several things that needs to be setup:
+- You need to provide configuration for your use case. You can either set each variable as environment variable or fill `config.json`. Make sure not to commit `config.json` file into repository.
+- Before executing program, make sure to set up working directory to repository you want to test against.
+    - Keep in mind that you can override default config path with "--configPath "pathToConfig\config.json" programm argument.
+- All paths are resolved relative to working directory
 
 ## License
 The DependencyUpdaterTool is available under the MIT license. For more information, see the LICENSE file in this repository.
