@@ -1,5 +1,7 @@
-﻿using DependencyUpdated.Core;
-using DependencyUpdated.Core.Config;
+﻿using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Interfaces;
+using DependencyUpdated.Core.Models;
+using DependencyUpdated.Core.Models.Enums;
 using Microsoft.Extensions.Caching.Memory;
 using NuGet.Common;
 using NuGet.Configuration;

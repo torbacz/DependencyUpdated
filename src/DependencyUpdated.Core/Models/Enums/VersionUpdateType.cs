@@ -1,4 +1,4 @@
-namespace DependencyUpdated.Core;
+namespace DependencyUpdated.Core.Models.Enums;
 
 public enum VersionUpdateType
 {

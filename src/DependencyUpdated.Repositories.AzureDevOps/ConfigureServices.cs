@@ -1,11 +1,12 @@
-using DependencyUpdated.Core;
+using DependencyUpdated.Core.Interfaces;
+using DependencyUpdated.Core.Models.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
 public static class ConfigureServices
 {
-    public static IServiceCollection RegisterGithub(this IServiceCollection serviceCollection)
+    public static IServiceCollection RegisterAzureDevOps(this IServiceCollection serviceCollection)
     {
         serviceCollection.AddKeyedSingleton<IRepositoryProvider, AzureDevOps>(RepositoryType.AzureDevOps);
 

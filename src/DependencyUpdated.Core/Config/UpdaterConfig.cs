@@ -1,3 +1,4 @@
+using DependencyUpdated.Core.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace DependencyUpdated.Core.Config;
