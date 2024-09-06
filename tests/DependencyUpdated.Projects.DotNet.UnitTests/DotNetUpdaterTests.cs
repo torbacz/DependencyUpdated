@@ -54,7 +54,7 @@ public class DotNetUpdaterTests
         };
         
         // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(path, config);
+        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
         
         // Assert
         using (new AssertionScope())
@@ -76,7 +76,7 @@ public class DotNetUpdaterTests
         };
         
         // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(path, config);
+        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
         
         // Assert
         using (new AssertionScope())
@@ -98,7 +98,7 @@ public class DotNetUpdaterTests
         };
         
         // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(path, config);
+        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
         
         // Assert
         using (new AssertionScope())

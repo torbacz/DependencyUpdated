@@ -37,72 +37,68 @@ public static class Program
             throw new OptionsValidationException(nameof(UpdaterConfig), typeof(UpdaterConfig),
                 validationResult.Where(x => !string.IsNullOrEmpty(x.ErrorMessage)).Select(x => x.ErrorMessage!));
         }
-
+        
         var repositoryProvider =
             _serviceProvider.GetRequiredKeyedService<IRepositoryProvider>(config.Value.RepositoryType);
         var repositoryPath = Environment.CurrentDirectory;
+        repositoryProvider.SwitchToDefaultBranch(repositoryPath);
 
         foreach (var configEntry in config.Value.Projects)
         {
             var updater = _serviceProvider.GetRequiredKeyedService<IProjectUpdater>(configEntry.Type);
 
-            foreach (var project in configEntry.Directories)
+            foreach (var directory in configEntry.Directories)
             {
-                if (!Path.Exists(project))
+                if (!Path.Exists(directory))
                 {
-                    throw new FileNotFoundException("Search path not found", project);
+                    throw new FileNotFoundException("Search path not found", directory);
                 }
 
-                var allDepencenciesToUpdate = new List<DependencyDetails>();
-                var projectFiles = updater.GetAllProjectFiles(project).ToArray();
+                var projectFiles = updater.GetAllProjectFiles(directory);
+                var allDependenciesToUpdate =
+                    await updater.ExtractAllPackagesThatNeedToBeUpdated(projectFiles, configEntry);
 
-                foreach (var projectFile in projectFiles)
-                {
-                    var dependencyToUpdate =
-                        await updater.ExtractAllPackagesThatNeedToBeUpdated(projectFile, configEntry);
-                    allDepencenciesToUpdate.AddRange(dependencyToUpdate);
-                }
-
-                if (allDepencenciesToUpdate.Count == 0)
+                if (allDependenciesToUpdate.Count == 0)
                 {
                     continue;
                 }
 
-                var uniqueListOfDependencies = allDepencenciesToUpdate.DistinctBy(x => x.Name).ToList();
-
+                var uniqueListOfDependencies = allDependenciesToUpdate.DistinctBy(x => x.Name).ToList();
+                var projectName = ResolveProjectName(configEntry, directory);
                 foreach (var group in configEntry.Groups)
                 {
                     var matchesForGroup = uniqueListOfDependencies
                         .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
-                    uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
-
                     if (matchesForGroup.Length == 0)
                     {
                         continue;
                     }
-
-                    var projectName = configEntry.Name;
-                    repositoryProvider.SwitchToDefaultBranch(repositoryPath);
+                    
+                    uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
 
-                    var allUpdates = new List<UpdateResult>();
-                    foreach (var projectFile in projectFiles)
-                    {
-                        var updateResults = updater.HandleProjectUpdate(projectFile, matchesForGroup);
-                        allUpdates.AddRange(updateResults);
-                    }
-
+                    var allUpdates = updater.HandleProjectUpdate(projectFiles, matchesForGroup);
                     if (allUpdates.Count == 0)
                     {
                         continue;
                     }
 
                     repositoryProvider.CommitChanges(repositoryPath, projectName, group);
-                    repositoryProvider.SubmitPullRequest(
-                        allUpdates.DistinctBy(x => x.PackageName).ToArray(), projectName, group).Wait();
+                    await repositoryProvider.SubmitPullRequest(allUpdates.DistinctBy(x => x.PackageName).ToArray(), projectName, group);
+                    repositoryProvider.SwitchToDefaultBranch(repositoryPath);
                 }
             }
         }
+    }
+
+    private static string ResolveProjectName(Project project, string directory)
+    {
+        if (!project.EachDirectoryAsSeparate)
+        {
+            return project.Name;
+        }
+
+        return Path.GetFileName(directory);
     }
 
     private static void Configure(Options appOptions)

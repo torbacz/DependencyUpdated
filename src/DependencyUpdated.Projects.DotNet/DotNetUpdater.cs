@@ -26,15 +26,13 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories)).ToList();
     }
 
-    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(string fullPath,
+    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
         ICollection<DependencyDetails> dependenciesToUpdate)
     {
-        logger.Information("Processing: {FullPath} project", fullPath);
         return UpdateCsProj(fullPath, dependenciesToUpdate);
     }
 
-    public async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(string fullPath,
-        Project projectConfiguration)
+    public async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(IReadOnlyCollection<string> fullPath, Project projectConfiguration)
     {
         var nugets = ParseCsproj(fullPath);
 
@@ -79,6 +77,11 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         }
 
         throw new NotSupportedException($"Version configuration {projectConfiguration.Version} is not supported");
+    }
+
+    private static HashSet<DependencyDetails> ParseCsproj(IReadOnlyCollection<string> paths)
+    {
+        return paths.SelectMany(ParseCsproj).ToHashSet();
     }
 
     private static HashSet<DependencyDetails> ParseCsproj(string path)
@@ -165,9 +168,16 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         return version;
     }
 
+    private IReadOnlyCollection<UpdateResult> UpdateCsProj(IReadOnlyCollection<string> fullPaths,
+        ICollection<DependencyDetails> packagesToUpdate)
+    {
+        return fullPaths.SelectMany(x => UpdateCsProj(x, packagesToUpdate)).ToList();
+    }
+
     private IReadOnlyCollection<UpdateResult> UpdateCsProj(string fullPath,
         ICollection<DependencyDetails> packagesToUpdate)
     {
+        logger.Information("Updating: {FullPath} project", fullPath);
         var results = new List<UpdateResult>();
         var document = XDocument.Load(fullPath, LoadOptions.PreserveWhitespace);
 
