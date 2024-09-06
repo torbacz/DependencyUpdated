@@ -1,5 +1,6 @@
-using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Models;
+using DependencyUpdated.Core.Models.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Caching.Memory;

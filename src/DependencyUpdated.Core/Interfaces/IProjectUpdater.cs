@@ -1,6 +1,7 @@
 using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Models;
 
-namespace DependencyUpdated.Core;
+namespace DependencyUpdated.Core.Interfaces;
 
 public interface IProjectUpdater
 {

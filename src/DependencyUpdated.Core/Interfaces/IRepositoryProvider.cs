@@ -1,4 +1,6 @@
-namespace DependencyUpdated.Core;
+using DependencyUpdated.Core.Models;
+
+namespace DependencyUpdated.Core.Interfaces;
 
 public interface IRepositoryProvider
 {

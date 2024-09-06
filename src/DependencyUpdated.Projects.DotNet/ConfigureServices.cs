@@ -1,4 +1,5 @@
-using DependencyUpdated.Core;
+using DependencyUpdated.Core.Interfaces;
+using DependencyUpdated.Core.Models.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DependencyUpdated.Projects.DotNet;

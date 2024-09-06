@@ -1,5 +1,6 @@
-using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Interfaces;
+using DependencyUpdated.Core.Models;
 using DependencyUpdated.Repositories.AzureDevOps.Dto;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
