@@ -10,6 +10,8 @@ public sealed class Project : IValidatableObject
 
     public string Name { get; set; } = default!;
 
+    public bool EachDirectoryAsSeparate { get; set; } = false;
+
     public string[] DependencyConfigurations { get; set; } = [];
     
     public string[] Directories { get; set; } = [];
@@ -28,9 +30,14 @@ public sealed class Project : IValidatableObject
             yield return new ValidationResult($"{nameof(Directories)} cannot be empty");
         }
 
-        if (string.IsNullOrEmpty(Name))
+        if (!EachDirectoryAsSeparate && string.IsNullOrEmpty(Name))
         {
-            yield return new ValidationResult($"{nameof(Name)} must be provided");
+            yield return new ValidationResult($"{nameof(Name)} must be provided when {nameof(EachDirectoryAsSeparate)} is not set");
+        }
+        
+        if (EachDirectoryAsSeparate && !string.IsNullOrEmpty(Name))
+        {
+            yield return new ValidationResult($"{nameof(Name)} must not be provided when {nameof(EachDirectoryAsSeparate)} is set");
         }
 
         if (Groups.Length == 0)

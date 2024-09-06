@@ -144,7 +144,9 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     private static string CreateGitBranchName(string projectName, string branchName, string group)
     {
-        return $"{projectName.ToLower()}/{branchName.ToLower()}/{group.ToLower().Replace(".", "/").Replace("*", "asterix")}";
+        var newBranchName = $"{branchName.ToLower()}/{projectName.ToLower()}/{group.ToLower()}";
+        newBranchName = newBranchName.Replace(".", "/").Replace("*", "asterix");
+        return newBranchName;
     }
 
     private Branch? GetGitBranch(Repository repo, string branchName)
