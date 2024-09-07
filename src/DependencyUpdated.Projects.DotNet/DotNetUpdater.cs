@@ -38,41 +38,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         return await Task.FromResult(ParseCsproj(fullPath));
     }
 
-    private static HashSet<DependencyDetails> ParseCsproj(IReadOnlyCollection<string> paths)
-    {
-        return paths.SelectMany(ParseCsproj).ToHashSet();
-    }
-
-    private static HashSet<DependencyDetails> ParseCsproj(string path)
-    {
-        var document = XDocument.Load(path);
-        if (document.Root is null)
-        {
-            throw new InvalidOperationException("Root object is null");
-        }
-
-        var packageReferences = document.Root.Elements("ItemGroup")
-            .Elements("PackageReference");
-
-        var nugets = new HashSet<DependencyDetails>();
-        foreach (var packageReference in packageReferences)
-        {
-            var includeAttribute = packageReference.Attribute("Include");
-            var versionAttribute = packageReference.Attribute("Version");
-
-            if (includeAttribute == null || versionAttribute == null)
-            {
-                continue;
-            }
-
-            var name = includeAttribute.Value;
-            var version = NuGetVersion.Parse(versionAttribute.Value).Version;
-            nugets.Add(new DependencyDetails(name, version));
-        }
-
-        return nugets;
-    }
-
     public async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,
         Project projectConfiguration)
     {
@@ -127,6 +92,41 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             .ToHashSet();
         memoryCache.Set(package.Name, result);
         return result;
+    }
+
+    private static HashSet<DependencyDetails> ParseCsproj(IReadOnlyCollection<string> paths)
+    {
+        return paths.SelectMany(ParseCsproj).ToHashSet();
+    }
+
+    private static HashSet<DependencyDetails> ParseCsproj(string path)
+    {
+        var document = XDocument.Load(path);
+        if (document.Root is null)
+        {
+            throw new InvalidOperationException("Root object is null");
+        }
+
+        var packageReferences = document.Root.Elements("ItemGroup")
+            .Elements("PackageReference");
+
+        var nugets = new HashSet<DependencyDetails>();
+        foreach (var packageReference in packageReferences)
+        {
+            var includeAttribute = packageReference.Attribute("Include");
+            var versionAttribute = packageReference.Attribute("Version");
+
+            if (includeAttribute == null || versionAttribute == null)
+            {
+                continue;
+            }
+
+            var name = includeAttribute.Value;
+            var version = NuGetVersion.Parse(versionAttribute.Value).Version;
+            nugets.Add(new DependencyDetails(name, version));
+        }
+
+        return nugets;
     }
 
     private IReadOnlyCollection<UpdateResult> UpdateCsProj(IReadOnlyCollection<string> fullPaths,
