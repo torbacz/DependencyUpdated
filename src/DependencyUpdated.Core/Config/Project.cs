@@ -31,6 +31,14 @@ public sealed class Project : IValidatableObject
             yield return new ValidationResult($"{nameof(Directories)} cannot be empty");
         }
 
+        foreach (var directory in Directories)
+        {
+            if (!Path.Exists(directory))
+            {
+                yield return new ValidationResult($"Path {directory} not found"); 
+            }
+        }
+
         if (!EachDirectoryAsSeparate && string.IsNullOrEmpty(Name))
         {
             yield return new ValidationResult($"{nameof(Name)} must be provided when {nameof(EachDirectoryAsSeparate)} is not set");
