@@ -43,7 +43,7 @@ public class DotNetUpdaterTests
     }
 
     [Fact]
-    public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdatePatchVersion()
+    public async Task ExtractAllPackages_Should_ReturnPackagesFromCsProjFile()
     {
         // Arrange
         var path = Path.Combine("Projects", "SampleProject.csproj");
@@ -51,55 +51,11 @@ public class DotNetUpdaterTests
         config.ApplyDefaultValue();
         var expectedResult = new List<DependencyDetails>()
         {
-            new("Serilog", new Version(3,0,1, 0))
+            new("Serilog", new Version(3,0,0, 0))
         };
         
         // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
-        
-        // Assert
-        using (new AssertionScope())
-        {
-            packages.Should().BeEquivalentTo(expectedResult);
-        }
-    }
-    
-    [Fact]
-    public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdateMinorVersion()
-    {
-        // Arrange
-        var path = Path.Combine("Projects", "SampleProject.csproj");
-        var config = new Project() { Version = VersionUpdateType.Minor, Type = ProjectType.DotNet };
-        config.ApplyDefaultValue();
-        var expectedResult = new List<DependencyDetails>()
-        {
-            new("Serilog", new Version(3,1,1, 0))
-        };
-        
-        // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
-        
-        // Assert
-        using (new AssertionScope())
-        {
-            packages.Should().BeEquivalentTo(expectedResult);
-        }
-    }
-    
-    [Fact]
-    public async Task ExtractAllPackagesThatNeedToBeUpdated_Should_UpdateMajorVersion()
-    {
-        // Arrange
-        var path = Path.Combine("Projects", "SampleProject.csproj");
-        var config = new Project() { Version = VersionUpdateType.Major, Type = ProjectType.DotNet };
-        config.ApplyDefaultValue();
-        var expectedResult = new List<DependencyDetails>()
-        {
-            new("Serilog", new Version(4,0,1, 0))
-        };
-        
-        // Act
-        var packages = await _target.ExtractAllPackagesThatNeedToBeUpdated(new[] { path }, config);
+        var packages = await _target.ExtractAllPackages(new[] { path });
         
         // Assert
         using (new AssertionScope())

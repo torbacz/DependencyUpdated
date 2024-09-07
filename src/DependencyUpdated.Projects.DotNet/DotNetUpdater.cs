@@ -1,7 +1,6 @@
 ﻿using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
-using DependencyUpdated.Core.Models.Enums;
 using Microsoft.Extensions.Caching.Memory;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -34,51 +33,65 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         return UpdateCsProj(fullPath, dependenciesToUpdate);
     }
 
-    public async Task<ICollection<DependencyDetails>> ExtractAllPackagesThatNeedToBeUpdated(IReadOnlyCollection<string> fullPath, Project projectConfiguration)
+    public async Task<ICollection<DependencyDetails>> ExtractAllPackages(IReadOnlyCollection<string> fullPath)
     {
-        var nugets = ParseCsproj(fullPath);
+        return await Task.FromResult(ParseCsproj(fullPath));
+    }
 
-        var returnList = new List<DependencyDetails>();
-        foreach (var nuget in nugets)
+    public async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,
+        Project projectConfiguration)
+    {
+        var existsInCache =
+            memoryCache.TryGetValue<IReadOnlyCollection<DependencyDetails>>(package.Name, out var cachedVersion);
+        if (existsInCache && cachedVersion is not null)
         {
-            logger.Verbose("Processing {PackageName}:{PackageVersion}", nuget.Name, nuget.Version);
-            var latestVersion = await GetLatestVersion(nuget, projectConfiguration);
-            if (latestVersion is null)
+            return cachedVersion;
+        }
+
+        if (!projectConfiguration.DependencyConfigurations.Any())
+        {
+            throw new InvalidOperationException(
+                $"Missing {nameof(projectConfiguration.DependencyConfigurations)} in config.");
+        }
+
+        var packageSources = new List<PackageSource>();
+        foreach (var projectConfigurationPath in projectConfiguration.DependencyConfigurations)
+        {
+            if (projectConfigurationPath.StartsWith("http"))
             {
-                logger.Warning("{PacakgeName} unable to find in sources", nuget.Name);
+                packageSources.Add(new PackageSource(projectConfigurationPath));
                 continue;
             }
 
-            logger.Information("{PacakgeName} new version {Version} available", nuget.Name, latestVersion);
-            returnList.Add(nuget with { Version = latestVersion.Version });
+            var setting = Settings.LoadSpecificSettings(Path.GetDirectoryName(projectConfigurationPath)!,
+                Path.GetFileName(projectConfigurationPath));
+            var packageSourceProvider = new PackageSourceProvider(setting);
+            var sources = packageSourceProvider.LoadPackageSources();
+            packageSources.AddRange(sources);
         }
 
-        return returnList;
-    }
-
-    private static NuGetVersion? GetMaxVersion(IEnumerable<NuGetVersion> versions, Version currentVersion,
-        Project projectConfiguration)
-    {
-        var baseQuery = versions.Where(x => !x.IsPrerelease);
-        if (projectConfiguration.Version == VersionUpdateType.Major)
+        var providers = Repository.Provider.GetCoreV3();
+        var sourceRepositoryProvider =
+            new SourceRepositoryProvider(new PackageSourceProvider(NullSettings.Instance, packageSources), providers);
+        var repositories = sourceRepositoryProvider.GetRepositories();
+        var allVersions = new List<NuGetVersion>();
+        foreach (var repository in repositories)
         {
-            return baseQuery.Max();
+            var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
+            var versions = await findPackageByIdResource.GetAllVersionsAsync(
+                package.Name,
+                new SourceCacheContext(),
+                NullLogger.Instance,
+                CancellationToken.None);
+            allVersions.AddRange(versions.Where(x => !x.IsPrerelease));
         }
 
-        if (projectConfiguration.Version == VersionUpdateType.Minor)
-        {
-            return baseQuery.Where(x =>
-                x.Version.Major == currentVersion.Major && x.Version.Minor > currentVersion.Minor).Max();
-        }
-
-        if (projectConfiguration.Version == VersionUpdateType.Patch)
-        {
-            return baseQuery.Where(x =>
-                x.Version.Major == currentVersion.Major && x.Version.Minor == currentVersion.Minor &&
-                x.Version.Build > currentVersion.Build).Max();
-        }
-
-        throw new NotSupportedException($"Version configuration {projectConfiguration.Version} is not supported");
+        var result = allVersions
+            .DistinctBy(x => x.Version)
+            .Select(x => package with { Version = x.Version })
+            .ToHashSet();
+        memoryCache.Set(package.Name, result);
+        return result;
     }
 
     private static HashSet<DependencyDetails> ParseCsproj(IReadOnlyCollection<string> paths)
@@ -114,60 +127,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         }
 
         return nugets;
-    }
-
-    private async Task<NuGetVersion?> GetLatestVersion(DependencyDetails package, Project projectConfiguration)
-    {
-        var existsInCache = memoryCache.TryGetValue<NuGetVersion?>(package.Name, out var cachedVersion);
-        if (existsInCache)
-        {
-            return cachedVersion;
-        }
-
-        if (!projectConfiguration.DependencyConfigurations.Any())
-        {
-            throw new InvalidOperationException(
-                $"Missing {nameof(projectConfiguration.DependencyConfigurations)} in config.");
-        }
-
-        var packageSources = new List<PackageSource>();
-        foreach (var projectConfigurationPath in projectConfiguration.DependencyConfigurations)
-        {
-            if (projectConfigurationPath.StartsWith("http"))
-            {
-                packageSources.Add(new PackageSource(projectConfigurationPath));
-                continue;
-            }
-            
-            var setting = Settings.LoadSpecificSettings(Path.GetDirectoryName(projectConfigurationPath)!,
-                Path.GetFileName(projectConfigurationPath));
-            var packageSourceProvider = new PackageSourceProvider(setting);
-            var sources = packageSourceProvider.LoadPackageSources();
-            packageSources.AddRange(sources);
-        }
-
-        var providers = Repository.Provider.GetCoreV3();
-        var sourceRepositoryProvider =
-            new SourceRepositoryProvider(new PackageSourceProvider(NullSettings.Instance, packageSources), providers);
-        var repositories = sourceRepositoryProvider.GetRepositories();
-        var version = default(NuGetVersion?);
-        foreach (var repository in repositories)
-        {
-            var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(
-                package.Name,
-                new SourceCacheContext(),
-                NullLogger.Instance,
-                CancellationToken.None);
-            var maxVersion = GetMaxVersion(versions, package.Version, projectConfiguration);
-            if (version is null || (maxVersion is not null && maxVersion >= version))
-            {
-                version = maxVersion;
-            }
-        }
-
-        memoryCache.Set(package.Name, version);
-        return version;
     }
 
     private IReadOnlyCollection<UpdateResult> UpdateCsProj(IReadOnlyCollection<string> fullPaths,
