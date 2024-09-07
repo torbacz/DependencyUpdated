@@ -10,7 +10,7 @@
         <PackageId>DependencyUpdaterTool</PackageId>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>dut</ToolCommandName>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReadmeFile>README.MD</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
 
