@@ -24,12 +24,9 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var branchName = config.Value.AzureDevOps.TargetBranchName;
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
         using var repo = new Repository(repositoryPath);
-        var branch = GetGitBranch(repo, branchName);
-        if (branch == null)
-        {
-            throw new InvalidOperationException($"Branch {branchName} doesn't exist");
-        }
-        
+        var branch = GetGitBranch(repo, branchName) 
+                     ?? throw new InvalidOperationException($"Branch {branchName} doesn't exist");
+
         Commands.Checkout(repo, branch);
     }
 
@@ -59,10 +56,10 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
         using var repo = new Repository(repositoryPath);
         
-        var changes = repo.RetrieveStatus(new StatusOptions() { IncludeUntracked = true });
-        if (!changes.IsDirty)
+        var changesToCommit = repo.Diff.Compare<TreeChanges>(repo.Head.Tip.Tree, DiffTargets.Index);
+        if (changesToCommit.Count == 0)
         {
-            logger.Information("Na changes to commit");
+            logger.Information("No changes to commit");
             return;
         }
         
@@ -77,20 +74,28 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
     {
-        var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
-        var prDescription = CreatePrDescription(updates);
-        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
+        using var client = new HttpClient();
         var configValue = config.Value.AzureDevOps;
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+            Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
+        
+        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         var sourceBranch = $"refs/heads/{gitBranchName}";
         var targetBranch = $"refs/heads/{configValue.TargetBranchName}";
         var baseUrl =
             $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests?api-version=6.0";
 
+        if (await CheckIfPrExists(client, baseUrl, sourceBranch, targetBranch))
+        {
+            logger.Information("PR from {SourceBranch} to {TargetBranch} already exists. Skipping creating PR", gitBranchName, configValue.TargetBranchName);
+            return;
+        }
+        
+        var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
+        var prDescription = CreatePrDescription(updates);
+
         logger.Information("Creating new PR");
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-            Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
         var pr = new PullRequest(sourceBranch, targetBranch, prTitile, prDescription);
 
         var jsonString = JsonSerializer.Serialize(pr);
@@ -156,6 +161,20 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var newBranchName = $"{branchName.ToLower()}/{projectName.ToLower()}/{group.ToLower()}";
         newBranchName = newBranchName.Replace(".", "/").Replace("*", "asterix");
         return newBranchName;
+    }
+    
+    private async Task<bool> CheckIfPrExists(HttpClient client, string baseUrl, string sourceBranchName,
+        string targetBranchName)
+    {
+        var response = await client.GetAsync(baseUrl);
+        response.EnsureSuccessStatusCode();
+
+        var jsonString = await response.Content.ReadAsStringAsync();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
+        var responseObject = JsonSerializer.Deserialize<PullRequestArray>(jsonString, options) ??
+                             throw new InvalidOperationException("Missing response from API");
+
+        return responseObject.Value.Any(pr => pr.SourceRefName == sourceBranchName && pr.TargetRefName == targetBranchName);
     }
 
     private Branch? GetGitBranch(Repository repo, string branchName)
