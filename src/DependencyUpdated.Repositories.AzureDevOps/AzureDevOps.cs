@@ -58,6 +58,14 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
         using var repo = new Repository(repositoryPath);
+        
+        var changes = repo.RetrieveStatus(new StatusOptions() { IncludeUntracked = true });
+        if (!changes.IsDirty)
+        {
+            logger.Information("Na changes to commit");
+            return;
+        }
+        
         Commands.Stage(repo, "*");
         var author = new Signature(config.Value.AzureDevOps.Username, config.Value.AzureDevOps.Email,
             timeProvider.GetUtcNow());
