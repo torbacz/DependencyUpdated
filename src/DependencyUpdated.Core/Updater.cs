@@ -21,36 +21,41 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
         foreach (var configEntry in config.Value.Projects)
         {
             var updater = serviceProvider.GetRequiredKeyedService<IProjectUpdater>(configEntry.Type);
-
             foreach (var directory in configEntry.Directories)
             {
                 var projectFiles = updater.GetAllProjectFiles(directory);
-                var allProjectDependencies = await updater.ExtractAllPackages(projectFiles);
-                if (allProjectDependencies.Count == 0)
-                {
-                    continue;
-                }
-
-                var allDependenciesToUpdate = await GetLatestVersions(allProjectDependencies, updater, configEntry);
-                var uniqueListOfDependencies = allDependenciesToUpdate.DistinctBy(x => x.Name).ToList();
                 var projectName = ResolveProjectName(configEntry, directory);
+                var alreadyProcessed = new List<DependencyDetails>();
                 foreach (var group in configEntry.Groups)
                 {
-                    var matchesForGroup = uniqueListOfDependencies
+                    repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
+                    var allProjectDependencies =
+                        (await updater.ExtractAllPackages(projectFiles)).Except(alreadyProcessed).ToArray();
+                    if (allProjectDependencies.Length == 0)
+                    {
+                        continue;
+                    }
+                    
+                    var matchesForGroup = allProjectDependencies
                         .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
                     if (matchesForGroup.Length == 0)
                     {
                         continue;
                     }
-
-                    repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
-                    uniqueListOfDependencies.RemoveAll(x => FileSystemName.MatchesSimpleExpression(group, x.Name));
-                    var allUpdates = updater.HandleProjectUpdate(projectFiles, matchesForGroup);
+                    
+                    var allDependenciesToUpdate = await GetLatestVersions(matchesForGroup, updater, configEntry);
+                    if (allDependenciesToUpdate.Count == 0)
+                    {
+                        continue;
+                    }
+                    
+                    var allUpdates = updater.HandleProjectUpdate(projectFiles, allDependenciesToUpdate);
                     if (allUpdates.Count == 0)
                     {
                         continue;
                     }
 
+                    alreadyProcessed.AddRange(allDependenciesToUpdate);
                     repositoryProvider.CommitChanges(repositoryPath, projectName, group);
                     await repositoryProvider.SubmitPullRequest(allUpdates, projectName, group);
                     repositoryProvider.SwitchToDefaultBranch(repositoryPath);
@@ -113,6 +118,12 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
             if (latestVersion is null)
             {
                 logger.Warning("{PacakgeName} unable to find in sources", dependencyDetails.Name);
+                continue;
+            }
+
+            if (latestVersion.Version == dependencyDetails.Version)
+            {
+                logger.Information("{PackageName} no new version found", dependencyDetails.Name);
                 continue;
             }
 
