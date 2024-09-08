@@ -1,3 +1,3 @@
 namespace DependencyUpdated.Repositories.AzureDevOps.Dto;
 
-public record PullRequestArray(PullRequest[] Value);
+public record PullRequestArray(IReadOnlyCollection<PullRequest> Value);
