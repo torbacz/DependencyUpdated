@@ -18,32 +18,25 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
         var repositoryPath = Environment.CurrentDirectory;
         repositoryProvider.SwitchToDefaultBranch(repositoryPath);
 
-        foreach (var configEntry in config.Value.Projects)
+        foreach (var project in config.Value.Projects)
         {
-            var updater = serviceProvider.GetRequiredKeyedService<IProjectUpdater>(configEntry.Type);
-            foreach (var directory in configEntry.Directories)
+            var updater = serviceProvider.GetRequiredKeyedService<IProjectUpdater>(project.Type);
+            foreach (var directory in project.Directories)
             {
                 var projectFiles = updater.GetAllProjectFiles(directory);
-                var projectName = ResolveProjectName(configEntry, directory);
+                var projectName = ResolveProjectName(project, directory);
                 var alreadyProcessed = new List<DependencyDetails>();
-                foreach (var group in configEntry.Groups)
+                foreach (var group in project.Groups)
                 {
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
-                    var allProjectDependencies =
-                        (await updater.ExtractAllPackages(projectFiles)).Except(alreadyProcessed).ToArray();
-                    if (allProjectDependencies.Length == 0)
+                    var allProjectDependencies = await updater.ExtractAllPackages(projectFiles);
+                    var filteredPackages = FilterPackages(allProjectDependencies, alreadyProcessed, group, project);
+                    if (filteredPackages.Count == 0)
                     {
                         continue;
                     }
                     
-                    var matchesForGroup = allProjectDependencies
-                        .Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
-                    if (matchesForGroup.Length == 0)
-                    {
-                        continue;
-                    }
-                    
-                    var allDependenciesToUpdate = await GetLatestVersions(matchesForGroup, updater, configEntry);
+                    var allDependenciesToUpdate = await GetLatestVersions(filteredPackages, updater, project);
                     if (allDependenciesToUpdate.Count == 0)
                     {
                         continue;
@@ -63,7 +56,32 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
             }
         }
     }
-    
+
+    private static ICollection<DependencyDetails> FilterPackages(
+        ICollection<DependencyDetails> allPackagesFromProjects, IReadOnlyCollection<DependencyDetails> alreadyProcessed,
+        string group, Project project)
+    {
+        if (allPackagesFromProjects.Count == 0)
+        {
+            return ArraySegment<DependencyDetails>.Empty;
+        }
+
+        var basePackages = allPackagesFromProjects.Except(alreadyProcessed);
+
+        if (project.Include.Count > 0)
+        {
+            basePackages = basePackages.Where(x => project.Include.Any(include => FileSystemName.MatchesSimpleExpression(include, x.Name)));
+        }
+        
+        if (project.Exclude.Count > 0)
+        {
+            basePackages = basePackages.Where(x => !project.Exclude.Any(exclude => FileSystemName.MatchesSimpleExpression(exclude, x.Name)));
+        }
+
+        basePackages = basePackages.Where(x => FileSystemName.MatchesSimpleExpression(group, x.Name)).ToArray();
+        return basePackages.ToArray();
+    }
+
     private static string ResolveProjectName(Project project, string directory)
     {
         if (!project.EachDirectoryAsSeparate)

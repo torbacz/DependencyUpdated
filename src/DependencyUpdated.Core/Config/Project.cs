@@ -13,11 +13,15 @@ public sealed class Project : IValidatableObject
 
     public bool EachDirectoryAsSeparate { get; set; } = false;
 
-    public string[] DependencyConfigurations { get; set; } = [];
+    public IReadOnlyList<string> DependencyConfigurations { get; set; } = [];
     
-    public string[] Directories { get; set; } = [];
+    public IReadOnlyList<string> Directories { get; set; } = [];
 
-    public string[] Groups { get; set; } = [];
+    public IReadOnlyList<string> Groups { get; set; } = [];
+
+    public IReadOnlyList<string> Include { get; set; } = [];
+
+    public IReadOnlyList<string> Exclude { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -26,7 +30,7 @@ public sealed class Project : IValidatableObject
             yield return new ValidationResult($"Value {Type} is not valid type for {nameof(Type)}");
         }
         
-        if (Directories.Length == 0)
+        if (Directories.Count == 0)
         {
             yield return new ValidationResult($"{nameof(Directories)} cannot be empty");
         }
@@ -49,7 +53,7 @@ public sealed class Project : IValidatableObject
             yield return new ValidationResult($"{nameof(Name)} must not be provided when {nameof(EachDirectoryAsSeparate)} is set");
         }
 
-        if (Groups.Length == 0)
+        if (Groups.Count == 0)
         {
             yield return new ValidationResult($"Missing ${nameof(Groups)}.");
         }
@@ -57,12 +61,12 @@ public sealed class Project : IValidatableObject
 
     public void ApplyDefaultValue()
     {
-        if (DependencyConfigurations.Length == 0 && Type == ProjectType.DotNet)
+        if (DependencyConfigurations.Count == 0 && Type == ProjectType.DotNet)
         {
             DependencyConfigurations = ["https://api.nuget.org/v3/index.json"];
         }
 
-        if (Groups.Length == 0)
+        if (Groups.Count == 0)
         {
             Groups = ["*"];
         }
