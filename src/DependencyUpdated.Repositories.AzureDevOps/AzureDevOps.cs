@@ -56,8 +56,8 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
         using var repo = new Repository(repositoryPath);
         
-        var changesToCommit = repo.Diff.Compare<TreeChanges>(repo.Head.Tip.Tree, DiffTargets.Index);
-        if (changesToCommit.Count == 0)
+        var status = repo.RetrieveStatus();
+        if (!status.IsDirty)
         {
             logger.Information("No changes to commit");
             return;
@@ -182,13 +182,22 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var options = new FetchOptions { CredentialsProvider = CreateGitCredentialsProvider() };
         Commands.Fetch(repo, RemoteName, ArraySegment<string>.Empty, options, string.Empty);
         
-        var branch = repo.Branches[branchName];
-        if (branch is not null)
+        var localBranch = repo.Branches[branchName];
+        if (localBranch is not null)
         {
-            return branch;
+            return localBranch;
         }
         
-        return repo.Branches[$"{RemoteName}/{branchName}"];
+        var remoteBranch = repo.Branches[$"{RemoteName}/{branchName}"];
+        if (remoteBranch is null)
+        {
+            return null;
+        }
+        
+        // Create local tracking branch
+        var createdBranch = repo.CreateBranch(branchName, remoteBranch.Tip);
+        repo.Branches.Update(createdBranch, b => b.TrackedBranch = remoteBranch.CanonicalName);
+        return createdBranch;
     }
 
     private string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
