@@ -27,7 +27,7 @@ jobs:
       
     - name: Test
       continue-on-error: true
-      run: dotnet test --no-build -c Release -no-restore --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+      run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
     - name: ReportGenerator
       uses: im-open/code-coverage-report-generator@4
