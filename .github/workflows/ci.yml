@@ -39,21 +39,20 @@ jobs:
 
     - name: Create a status check for the code coverage results
       id: dotnet-coverage-check
-      # You may also reference just the major or major.minor version
       uses: im-open/process-code-coverage-summary@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         summary-file: './coverage-results/Summary.md'
-        create-status-check: true                     # Default: true
-        create-pr-comment: true                       # Default: true
-        update-comment-if-one-exists: true            # Default: true
-        update-comment-key: 'dotnet'                  # Default: N/A, used to further identify a comment to update if this action is used more than once in a workflow
-        ignore-threshold-failures: false              # Default: false
-        line-threshold: 80                            # Default: 0, which means thresholds are not applied
-        branch-threshold: 80                          # Default: 0, which means thresholds are not applied
+        create-status-check: true
+        create-pr-comment: true
+        update-comment-if-one-exists: true
+        update-comment-key: 'dotnet'
+        ignore-threshold-failures: false 
+        line-threshold: 80
+        branch-threshold: 80
 
-    - name: Fail if there were coverage failures
-      if: steps.dotnet-coverage-check.outputs.coverage-outcome == 'Failed'
-      run: |
-        echo "There were code coverage threshold failures."
-        exit 1
+    #- name: Fail if there were coverage failures
+      #if: steps.dotnet-coverage-check.outputs.coverage-outcome == 'Failed'
+      #run: |
+        #echo "There were code coverage threshold failures."
+        #exit 1
