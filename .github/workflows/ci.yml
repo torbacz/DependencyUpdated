@@ -27,7 +27,7 @@ jobs:
       
     - name: Test
       continue-on-error: true
-      run: dotnet test --no-build -c Release --logger trx --configuration Release /property:CollectCoverage=True /property:CoverletOutputFormat=opencover
+      run: dotnet test --no-build -c Release --logger trx /property:CollectCoverage=True /property:CoverletOutputFormat=opencover
 
     - name: ReportGenerator
       uses: im-open/code-coverage-report-generator@4
