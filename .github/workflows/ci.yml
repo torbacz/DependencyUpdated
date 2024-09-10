@@ -43,7 +43,7 @@ jobs:
       uses: im-open/process-code-coverage-summary@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        summary-file: './coverage-results/dotnet-summary.md'
+        summary-file: './coverage-results/summary.md'
         create-status-check: true                     # Default: true
         create-pr-comment: true                       # Default: true
         update-comment-if-one-exists: true            # Default: true
