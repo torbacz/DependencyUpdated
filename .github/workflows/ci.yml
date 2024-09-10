@@ -43,16 +43,10 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         summary-file: './coverage-results/Summary.md'
-        create-status-check: true
+        #create-status-check: true
         create-pr-comment: true
         update-comment-if-one-exists: true
         update-comment-key: 'dotnet'
         ignore-threshold-failures: false 
         line-threshold: 80
         branch-threshold: 80
-
-    #- name: Fail if there were coverage failures
-      #if: steps.dotnet-coverage-check.outputs.coverage-outcome == 'Failed'
-      #run: |
-        #echo "There were code coverage threshold failures."
-        #exit 1
