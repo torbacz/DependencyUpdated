@@ -32,11 +32,10 @@ jobs:
     - name: ReportGenerator
       uses: im-open/code-coverage-report-generator@4
       with:
-        reports: '*/**/coverage.opencover.xml'
+        reports: '*/**/coverage.cobertura.xml'
         targetdir: './coverage-results'
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
-        assemblyfilters: '-xunit*;-Dapper;-MyProj.Tests.Shared;'
 
     - name: Create a status check for the code coverage results
       id: dotnet-coverage-check
