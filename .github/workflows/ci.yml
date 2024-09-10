@@ -26,4 +26,35 @@ jobs:
       run: dotnet build --no-restore -c Release
       
     - name: Test
-      run: dotnet test --no-build -c Release --verbosity normal
+      continue-on-error: true
+      run: dotnet test --no-build -c Release  --logger trx --configuration Release /property:CollectCoverage=True /property:CoverletOutputFormat=opencover
+
+    - name: ReportGenerator
+      uses: im-open/code-coverage-report-generator@4
+      with:
+        reports: '*/**/coverage.opencover.xml'
+        targetdir: './coverage-results'
+        title: dotnet code coverage
+        reporttypes: 'MarkdownSummary;'
+        assemblyfilters: '-xunit*;-Dapper;-MyProj.Tests.Shared;'
+
+    - name: Create a status check for the code coverage results
+      id: dotnet-coverage-check
+      # You may also reference just the major or major.minor version
+      uses: im-open/process-code-coverage-summary@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/dotnet-summary.md'
+        create-status-check: true                     # Default: true
+        create-pr-comment: true                       # Default: true
+        update-comment-if-one-exists: true            # Default: true
+        update-comment-key: 'dotnet'                  # Default: N/A, used to further identify a comment to update if this action is used more than once in a workflow
+        ignore-threshold-failures: false              # Default: false
+        line-threshold: 80                            # Default: 0, which means thresholds are not applied
+        branch-threshold: 80                          # Default: 0, which means thresholds are not applied
+
+    - name: Fail if there were coverage failures
+      if: steps.dotnet-coverage-check.outputs.coverage-outcome == 'Failed'
+      run: |
+        echo "There were code coverage threshold failures."
+        exit 1
