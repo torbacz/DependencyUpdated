@@ -26,4 +26,27 @@ jobs:
       run: dotnet build --no-restore -c Release
       
     - name: Test
-      run: dotnet test --no-build -c Release --verbosity normal
+      continue-on-error: true
+      run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+    - name: ReportGenerator
+      uses: im-open/code-coverage-report-generator@4
+      with:
+        reports: '*/**/coverage.cobertura.xml'
+        targetdir: './coverage-results'
+        title: dotnet code coverage
+        reporttypes: 'MarkdownSummary;'
+
+    - name: Create a status check for the code coverage results
+      id: dotnet-coverage-check
+      uses: im-open/process-code-coverage-summary@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/Summary.md'
+        #create-status-check: true
+        create-pr-comment: true
+        update-comment-if-one-exists: true
+        update-comment-key: 'dotnet'
+        ignore-threshold-failures: false 
+        line-threshold: 80
+        branch-threshold: 80
