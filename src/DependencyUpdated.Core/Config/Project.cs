@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DependencyUpdated.Core.Config;
 
-public sealed class Project : IValidatableObject
+public sealed record Project : IValidatableObject
 {
     public ProjectType Type { get; set; }
     
@@ -55,7 +55,7 @@ public sealed class Project : IValidatableObject
 
         if (Groups.Count == 0)
         {
-            yield return new ValidationResult($"Missing ${nameof(Groups)}.");
+            yield return new ValidationResult($"Missing {nameof(Groups)}.");
         }
     }
 
