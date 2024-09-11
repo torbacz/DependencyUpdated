@@ -6,6 +6,7 @@ using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
 using Microsoft.Extensions.Options;
 using Serilog;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -13,6 +14,7 @@ using System.Text.Json;
 
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
+[ExcludeFromCodeCoverage]
 internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterConfig> config, ILogger logger)
     : IRepositoryProvider
 {

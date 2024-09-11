@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DependencyUpdated.Core.Config;
 
-public class AzureDevOpsConfig : IValidatableObject
+public record AzureDevOpsConfig : IValidatableObject
 {
     public string? Username { get; set; }
 
