@@ -9,6 +9,8 @@ public record AzureDevOpsConfig : IValidatableObject
     public string? Email { get; set; }
 
     public string? PAT { get; set; }
+    
+    public string? AutoApproverId { get; set; }
 
     public string? Organization { get; set; }
 
