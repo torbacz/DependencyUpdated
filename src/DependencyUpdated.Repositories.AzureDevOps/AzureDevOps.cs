@@ -111,29 +111,11 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
             await azureDevOpsClient.UpdateWorkItemRelation(configValue.WorkItemId.Value, patchValue);
         }
 
-        /*
-$approvalsUrl = "https://vsrm.dev.azure.com/{org}/{project}/_apis/release/approvals?api-version=6.0"
-$token = "PAT"
-$script:Base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $User, $token)))
-$header = @{Authorization = ("Basic {0}" -f $base64AuthInfo)}
-$response = Invoke-RestMethod -Uri $approvalsUrl -Method Get -Headers $header
-$latestReleaseId = 1111
-$id = $response.value.Where({ $_.release.id -eq $latestReleaseId }).id
-# approve 
-$body = '{
-  "status": "approved",
-  "comments": "Good to go"
-}'
-$approvalUrl = "https://vsrm.dev.azure.com/{org}/{project}/_apis/release/approvals/$($id)?api-version=6.0"
-$response = Invoke-RestMethod -Uri $approvalUrl -Method Patch -Headers $header -Body $body -ContentType application/json
-         */
-        
         if (!string.IsNullOrEmpty(configValue.AutoApproverId))
         {
-            logger.Information("Setting autto approver to {ApproverId}", configValue.AutoApproverId);
-            // await azureDevOpsClient.SetApprover(new ApproverInfo(configValue.Username!), configValue.Repository!,
-            //     responseObject.PullRequestId,
-            //     configValue.AutoApproverId!);
+            logger.Information("Setting auto approver to {ApproverId}", configValue.AutoApproverId);
+            await azureDevOpsClient.Approve(configValue.Repository!, responseObject.PullRequestId,
+                configValue.AutoApproverId, ApproveBody.Approve());
         }
     }
 
