@@ -17,8 +17,9 @@ public interface IAzureDevOpsClient
     Task<HttpResponseMessage> UpdatePullRequest(string repository, int pullRequestId, [Body] PullRequestUpdate pullRequestUpdate);
 
     [Patch("/_apis/wit/workitems/{workItemId}?api-version=6.0")]
+    [Headers("Content-Type: application/json-patch+json")]
     Task<HttpResponseMessage> UpdateWorkItemRelation(int workItemId, [Body] WorkItemUpdatePatch[] patchValue);
 
-    [Put("_apis/git/repositories/{repository}/pullRequests/{pullRequestId}/" + ReviewersResource + "/{reviewerId}?api-version=6.0")]
+    [Put("/_apis/git/repositories/{repository}/pullRequests/{pullRequestId}/" + ReviewersResource + "/{reviewerId}?api-version=6.0")]
     Task<HttpResponseMessage> Approve(string repository, int pullRequestId, string reviewerId, [Body] ApproveBody body);
 }

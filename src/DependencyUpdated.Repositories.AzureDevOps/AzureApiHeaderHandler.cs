@@ -5,9 +5,9 @@ using System.Text;
 
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
-internal sealed class AuthHeaderHandler(IOptions<UpdaterConfig> config) : DelegatingHandler
+internal sealed class AzureApiHeaderHandler(IOptions<UpdaterConfig> config) : DelegatingHandler
 {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var approverPat = config.Value.AzureDevOps.ApproverPAT;
         if (request.RequestUri?.AbsolutePath.Contains(IAzureDevOpsClient.ReviewersResource) == true && 
@@ -17,7 +17,9 @@ internal sealed class AuthHeaderHandler(IOptions<UpdaterConfig> config) : Delega
         }
 
         request.Headers.Authorization ??= CreateToken(config.Value.AzureDevOps.PAT!);
-        return base.SendAsync(request, cancellationToken);
+        var response = await base.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return response;
     }
 
     private static AuthenticationHeaderValue CreateToken(string token)

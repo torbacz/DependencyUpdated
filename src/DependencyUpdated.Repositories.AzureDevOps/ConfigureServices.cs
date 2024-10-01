@@ -14,7 +14,7 @@ public static class ConfigureServices
     public static IServiceCollection RegisterAzureDevOps(this IServiceCollection serviceCollection)
     {
         serviceCollection.AddKeyedSingleton<IRepositoryProvider, AzureDevOps>(RepositoryType.AzureDevOps);
-        serviceCollection.AddSingleton<AuthHeaderHandler>();
+        serviceCollection.AddSingleton<AzureApiHeaderHandler>();
         serviceCollection.AddRefitClient<IAzureDevOpsClient>(_ => new RefitSettings()
         {
             HttpMessageHandlerFactory = () => new LoggingHandler(),
@@ -28,7 +28,7 @@ public static class ConfigureServices
             x.BaseAddress =
                 new Uri($"https://dev.azure.com/{options.AzureDevOps.Organization}/{options.AzureDevOps.Project}");
             x.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        }).AddHttpMessageHandler<AuthHeaderHandler>();
+        }).AddHttpMessageHandler<AzureApiHeaderHandler>();
         return serviceCollection;
     }
 }

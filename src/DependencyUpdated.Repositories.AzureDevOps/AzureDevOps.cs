@@ -7,7 +7,9 @@ using LibGit2Sharp.Handlers;
 using Microsoft.Extensions.Options;
 using Serilog;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
@@ -80,10 +82,11 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
         if (await CheckIfPrExists(sourceBranch, targetBranch))
         {
-            logger.Information("PR from {SourceBranch} to {TargetBranch} already exists. Skipping creating PR", gitBranchName, configValue.TargetBranchName);
+            logger.Information("PR from {SourceBranch} to {TargetBranch} already exists. Skipping creating PR",
+                gitBranchName, configValue.TargetBranchName);
             return;
         }
-        
+
         var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
         var prDescription = CreatePrDescription(updates);
 
@@ -104,11 +107,31 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         {
             logger.Information("Setting work item {ConfigValueWorkItemId} relation to {PullRequestId}",
                 configValue.WorkItemId.Value, responseObject.PullRequestId);
+            var workItemUpdateUrl = new Uri(
+                $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/wit/workitems/{configValue.WorkItemId.Value}?api-version=6.0");
             var patchValue = new[]
             {
-                new WorkItemUpdatePatch("add", "/relations/-", new WorkItemUpdateRelation("ArtifactLink", responseObject.ArtifactId, new WorkItemUpdateAttributes("Pull Request")))
+                new
+                {
+                    op = "add",
+                    path = "/relations/-",
+                    value = new
+                    {
+                        rel = "ArtifactLink",
+                        url = responseObject.ArtifactId,
+                        attributes = new { name = "Pull Request" }
+                    }
+                }
             };
-            await azureDevOpsClient.UpdateWorkItemRelation(configValue.WorkItemId.Value, patchValue);
+
+            var jsonString = JsonSerializer.Serialize(patchValue);
+            var content = new StringContent(jsonString, Encoding.UTF8, "application/json-patch+json");
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
+            var result = await client.PatchAsync(workItemUpdateUrl, content);
+            result.EnsureSuccessStatusCode();
         }
 
         if (!string.IsNullOrEmpty(configValue.AutoApproverId))
