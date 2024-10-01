@@ -26,10 +26,10 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                 var projectFiles = updater.GetAllProjectFiles(directory);
                 var projectName = ResolveProjectName(project, directory);
                 var alreadyProcessed = new List<DependencyDetails>();
+                var allProjectDependencies = await updater.ExtractAllPackages(projectFiles);
                 foreach (var group in project.Groups)
                 {
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
-                    var allProjectDependencies = await updater.ExtractAllPackages(projectFiles);
                     var filteredPackages = FilterPackages(allProjectDependencies, alreadyProcessed, group, project);
                     if (filteredPackages.Count == 0)
                     {

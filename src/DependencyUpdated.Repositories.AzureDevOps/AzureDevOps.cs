@@ -7,7 +7,6 @@ using LibGit2Sharp.Handlers;
 using Microsoft.Extensions.Options;
 using Serilog;
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -15,7 +14,7 @@ using System.Text.Json;
 namespace DependencyUpdated.Repositories.AzureDevOps;
 
 [ExcludeFromCodeCoverage]
-internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterConfig> config, ILogger logger)
+internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterConfig> config, ILogger logger, IAzureDevOpsClient azureDevOpsClient)
     : IRepositoryProvider
 {
     private const string GitCommitMessage = "Bump dependencies";
@@ -76,58 +75,32 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
     {
-        using var client = new HttpClient();
         var configValue = config.Value.AzureDevOps;
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-            Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
-        
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         var sourceBranch = $"refs/heads/{gitBranchName}";
         var targetBranch = $"refs/heads/{configValue.TargetBranchName}";
-        var baseUrl =
-            $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests?api-version=6.0";
 
-        if (await CheckIfPrExists(client, baseUrl, sourceBranch, targetBranch))
+        if (await CheckIfPrExists(sourceBranch, targetBranch))
         {
-            logger.Information("PR from {SourceBranch} to {TargetBranch} already exists. Skipping creating PR", gitBranchName, configValue.TargetBranchName);
+            logger.Information("PR from {SourceBranch} to {TargetBranch} already exists. Skipping creating PR",
+                gitBranchName, configValue.TargetBranchName);
             return;
         }
-        
+
         var prTitile = $"[AutoUpdate] Update dependencies - {projectName}";
         var prDescription = CreatePrDescription(updates);
 
         logger.Information("Creating new PR");
         var pr = new PullRequest(sourceBranch, targetBranch, prTitile, prDescription);
-
-        var jsonString = JsonSerializer.Serialize(pr);
-        var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-        var result = await client.PostAsync(baseUrl, content);
-        result.EnsureSuccessStatusCode();
-
-        if (result.StatusCode == HttpStatusCode.NonAuthoritativeInformation)
-        {
-            throw new InvalidOperationException("Invalid PAT token provided");
-        }
-
-        var response = await result.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
-        var responseObject = JsonSerializer.Deserialize<PullRequestResponse>(response, options) ??
-                             throw new InvalidOperationException("Missing response from API");
-
+        var responseObject = await azureDevOpsClient.CreatePullRequest(configValue.Repository!, pr);
         logger.Information("New PR created {Id}", responseObject.PullRequestId);
         if (configValue.AutoComplete)
         {
             logger.Information("Setting autocomplete for PR {Id}", responseObject.PullRequestId);
-            baseUrl =
-                $"https://dev.azure.com/{configValue.Organization}/{configValue.Project}/_apis/git/repositories/{configValue.Repository}/pullrequests/{responseObject.PullRequestId}?api-version=6.0";
             var autoComplete = new PullRequestUpdate(responseObject.CreatedBy,
                 new GitPullRequestCompletionOptions(true, false, GitPullRequestMergeStrategy.Squash));
-            jsonString = JsonSerializer.Serialize(autoComplete);
-            content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-            result = await client.PatchAsync(baseUrl, content);
-            result.EnsureSuccessStatusCode();
+            await azureDevOpsClient.UpdatePullRequest(configValue.Repository!, responseObject.PullRequestId,
+                autoComplete);
         }
 
         if (configValue.WorkItemId.HasValue)
@@ -151,10 +124,21 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
                 }
             };
 
-            jsonString = JsonSerializer.Serialize(patchValue);
-            content = new StringContent(jsonString, Encoding.UTF8, "application/json-patch+json");
-            result = await client.PatchAsync(workItemUpdateUrl, content);
+            var jsonString = JsonSerializer.Serialize(patchValue);
+            var content = new StringContent(jsonString, Encoding.UTF8, "application/json-patch+json");
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                Convert.ToBase64String(Encoding.UTF8.GetBytes($":{configValue.PAT}")));
+            var result = await client.PatchAsync(workItemUpdateUrl, content);
             result.EnsureSuccessStatusCode();
+        }
+
+        if (!string.IsNullOrEmpty(configValue.AutoApproverId))
+        {
+            logger.Information("Setting auto approver to {ApproverId}", configValue.AutoApproverId);
+            await azureDevOpsClient.Approve(configValue.Repository!, responseObject.PullRequestId,
+                configValue.AutoApproverId, ApproveBody.Approve());
         }
     }
 
@@ -165,18 +149,10 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         return newBranchName;
     }
     
-    private async Task<bool> CheckIfPrExists(HttpClient client, string baseUrl, string sourceBranchName,
-        string targetBranchName)
+    private async Task<bool> CheckIfPrExists(string sourceBranchName, string targetBranchName)
     {
-        var response = await client.GetAsync(baseUrl);
-        response.EnsureSuccessStatusCode();
-
-        var jsonString = await response.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, };
-        var responseObject = JsonSerializer.Deserialize<PullRequestArray>(jsonString, options) ??
-                             throw new InvalidOperationException("Missing response from API");
-
-        return responseObject.Value.Any(pr => pr.SourceRefName == sourceBranchName && pr.TargetRefName == targetBranchName);
+        var response = await azureDevOpsClient.GetPullRequests(config.Value.AzureDevOps.Repository!);
+        return response.Value.Any(pr => pr.SourceRefName == sourceBranchName && pr.TargetRefName == targetBranchName);
     }
 
     private Branch? GetGitBranch(Repository repo, string branchName)

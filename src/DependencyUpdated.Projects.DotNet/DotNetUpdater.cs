@@ -6,6 +6,7 @@ using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using System.Net;
 using System.Xml;
 using System.Xml.Linq;
 using ILogger = Serilog.ILogger;
@@ -78,12 +79,20 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
         foreach (var repository in repositories)
         {
             var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(
-                package.Name,
-                new SourceCacheContext(),
-                NullLogger.Instance,
-                CancellationToken.None);
-            allVersions.AddRange(versions.Where(x => !x.IsPrerelease));
+            try
+            {
+                var versions = await findPackageByIdResource.GetAllVersionsAsync(
+                    package.Name,
+                    new SourceCacheContext(),
+                    NullLogger.Instance,
+                    CancellationToken.None);
+                allVersions.AddRange(versions.Where(x => !x.IsPrerelease));
+            }
+            catch (FatalProtocolException ex)
+                when (ex.InnerException is HttpRequestException { StatusCode: HttpStatusCode.NotFound })
+            {
+                // Package not found in source
+            }
         }
 
         var result = allVersions
