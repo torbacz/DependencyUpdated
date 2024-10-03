@@ -20,11 +20,12 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
     private const string GitCommitMessage = "Bump dependencies";
     private const string RemoteName = "origin";
 
-    public void SwitchToDefaultBranch(string repositoryPath)
+    public void CleanAndSwitchToDefaultBranch(string repositoryPath)
     {
         var branchName = config.Value.AzureDevOps.TargetBranchName;
         logger.Information("Switching {Repository} to branch {Branch}", repositoryPath, branchName);
         using var repo = new Repository(repositoryPath);
+        repo.Reset(ResetMode.Hard);
         var branch = GetGitBranch(repo, branchName) 
                      ?? throw new InvalidOperationException($"Branch {branchName} doesn't exist");
 
