@@ -16,7 +16,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
         var repositoryProvider =
             serviceProvider.GetRequiredKeyedService<IRepositoryProvider>(config.Value.RepositoryType);
         var repositoryPath = Environment.CurrentDirectory;
-        repositoryProvider.SwitchToDefaultBranch(repositoryPath);
+        repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
 
         foreach (var project in config.Value.Projects)
         {
@@ -51,7 +51,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     alreadyProcessed.AddRange(allDependenciesToUpdate);
                     repositoryProvider.CommitChanges(repositoryPath, projectName, group);
                     await repositoryProvider.SubmitPullRequest(allUpdates, projectName, group);
-                    repositoryProvider.SwitchToDefaultBranch(repositoryPath);
+                    repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
                 }
             }
         }
