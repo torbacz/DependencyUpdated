@@ -150,6 +150,20 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         return newBranchName;
     }
     
+    private static string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
+    {
+        var stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine("DependencyUpdater auto update");
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine("Log:");
+        foreach (var update in updates)
+        {
+            stringBuilder.AppendLine($"Bump {update.PackageName}: {update.OldVersion} -> {update.NewVersion}");
+        }
+
+        return stringBuilder.ToString();
+    }
+    
     private async Task<bool> CheckIfPrExists(string sourceBranchName, string targetBranchName)
     {
         var response = await azureDevOpsClient.GetPullRequests(config.Value.AzureDevOps.Repository!);
@@ -177,20 +191,6 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var createdBranch = repo.CreateBranch(branchName, remoteBranch.Tip);
         repo.Branches.Update(createdBranch, b => b.TrackedBranch = remoteBranch.CanonicalName);
         return createdBranch;
-    }
-
-    private string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
-    {
-        var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("DependencyUpdater auto update");
-        stringBuilder.AppendLine();
-        stringBuilder.AppendLine("Log:");
-        foreach (var update in updates)
-        {
-            stringBuilder.AppendLine($"Bump {update.PackageName}: {update.OldVersion} -> {update.NewVersion}");
-        }
-
-        return stringBuilder.ToString();
     }
 
     private CredentialsHandler? CreateGitCredentialsProvider()
