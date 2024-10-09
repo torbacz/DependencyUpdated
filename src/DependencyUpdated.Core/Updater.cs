@@ -2,6 +2,7 @@ using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -9,8 +10,10 @@ using System.IO.Enumeration;
 
 namespace DependencyUpdated.Core;
 
-public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterConfig> config, ILogger logger)
+public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterConfig> config, ILogger logger, IMemoryCache memoryCache)
 {
+    private readonly List<string> _cacheKeys = new();
+    
     public async Task DoUpdate()
     {
         var repositoryProvider =
@@ -27,6 +30,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                 var projectName = ResolveProjectName(project, directory);
                 var alreadyProcessed = new List<DependencyDetails>();
                 var allProjectDependencies = await updater.ExtractAllPackages(projectFiles);
+                logger.Debug("Found packages {Packages} in projects {Project}", allProjectDependencies, projectFiles);
                 foreach (var group in project.Groups)
                 {
                     repositoryProvider.SwitchToUpdateBranch(repositoryPath, projectName, group);
@@ -35,26 +39,42 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     {
                         continue;
                     }
-                    
+
+                    logger.Debug("Filtered packages {Packages}", filteredPackages);
                     var allDependenciesToUpdate = await GetLatestVersions(filteredPackages, updater, project);
                     if (allDependenciesToUpdate.Count == 0)
                     {
                         continue;
                     }
-                    
+
+                    logger.Verbose("Found new versions: {Packages}", allDependenciesToUpdate);
                     var allUpdates = updater.HandleProjectUpdate(projectFiles, allDependenciesToUpdate);
                     if (allUpdates.Count == 0)
                     {
                         continue;
                     }
 
+                    logger.Information("Updated packages {Packages}", allUpdates);
                     alreadyProcessed.AddRange(allDependenciesToUpdate);
                     repositoryProvider.CommitChanges(repositoryPath, projectName, group);
                     await repositoryProvider.SubmitPullRequest(allUpdates, projectName, group);
                     repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
                 }
             }
+
+            foreach (var key in _cacheKeys)
+            {
+                memoryCache.Remove(key);
+            }
+            
+            _cacheKeys.Clear();
         }
+    }
+    
+    internal void AddToCache(DependencyDetails dependencyDetails, IReadOnlyCollection<DependencyDetails> packages)
+    {
+        memoryCache.Set(dependencyDetails.Name, packages);
+        _cacheKeys.Add(dependencyDetails.Name);
     }
 
     private static ICollection<DependencyDetails> FilterPackages(
@@ -131,7 +151,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
         {
             logger.Verbose("Processing {PackageName}:{PackageVersion}", dependencyDetails.Name,
                 dependencyDetails.Version);
-            var allVersions = await projectUpdater.GetVersions(dependencyDetails, projectConfiguration);
+            var allVersions = await GetVersions(projectUpdater, dependencyDetails, projectConfiguration);
             var latestVersion = GetMaxVersion(allVersions, dependencyDetails.Version, projectConfiguration);
             if (latestVersion is null)
             {
@@ -150,5 +170,19 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
         }
 
         return returnList;
+    }
+
+    private async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(IProjectUpdater projectUpdater,
+        DependencyDetails dependencyDetails, Project projectConfiguration)
+    {
+        if (memoryCache.TryGetValue<IReadOnlyCollection<DependencyDetails>>(dependencyDetails.Name,
+                out var versions) && versions is not null)
+        {
+            return versions;
+        }
+
+        var packages = await projectUpdater.GetVersions(dependencyDetails, projectConfiguration);
+        AddToCache(dependencyDetails, packages);
+        return packages;
     }
 }
