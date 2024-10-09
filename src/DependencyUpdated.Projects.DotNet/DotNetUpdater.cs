@@ -1,7 +1,6 @@
 ﻿using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
-using Microsoft.Extensions.Caching.Memory;
 using NuGet.Common;
 using NuGet.Configuration;
 using NuGet.Protocol.Core.Types;
@@ -9,11 +8,10 @@ using NuGet.Versioning;
 using System.Net;
 using System.Xml;
 using System.Xml.Linq;
-using ILogger = Serilog.ILogger;
 
 namespace DependencyUpdated.Projects.DotNet;
 
-internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : IProjectUpdater
+internal sealed class DotNetUpdater : IProjectUpdater
 {
     private static readonly string[] ValidDotnetPatterns =
     [
@@ -42,13 +40,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
     public async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,
         Project projectConfiguration)
     {
-        var existsInCache =
-            memoryCache.TryGetValue<IReadOnlyCollection<DependencyDetails>>(package.Name, out var cachedVersion);
-        if (existsInCache && cachedVersion is not null)
-        {
-            return cachedVersion;
-        }
-
         if (!projectConfiguration.DependencyConfigurations.Any())
         {
             throw new InvalidOperationException(
@@ -99,7 +90,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
             .DistinctBy(x => x.Version)
             .Select(x => package with { Version = x.Version })
             .ToHashSet();
-        memoryCache.Set(package.Name, result);
         return result;
     }
 
@@ -147,7 +137,6 @@ internal sealed class DotNetUpdater(ILogger logger, IMemoryCache memoryCache) : 
     private IReadOnlyCollection<UpdateResult> UpdateCsProj(string fullPath,
         ICollection<DependencyDetails> packagesToUpdate)
     {
-        logger.Information("Updating: {FullPath} project", fullPath);
         var results = new List<UpdateResult>();
         var document = XDocument.Load(fullPath, LoadOptions.PreserveWhitespace);
 

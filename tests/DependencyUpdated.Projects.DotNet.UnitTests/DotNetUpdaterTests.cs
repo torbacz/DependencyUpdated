@@ -3,27 +3,15 @@ using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using NSubstitute;
-using Serilog;
 using Xunit;
 
 namespace DependencyUpdated.Projects.DotNet.UnitTests;
 
 public class DotNetUpdaterTests
 {
-    private readonly DotNetUpdater _target;
-    private readonly ILogger _logger;
-    private readonly MockMemoryCache _memoryCahce;
-    private readonly string _searchPath;
+    private readonly DotNetUpdater _target = new();
+    private readonly string _searchPath = "Projects";
 
-    public DotNetUpdaterTests()
-    {
-        _logger = Substitute.For<ILogger>();
-        _memoryCahce = new MockMemoryCache();
-        _target = new DotNetUpdater(_logger, _memoryCahce);
-        _searchPath = "Projects";
-    }
-    
     [Fact]
     public void GetAllProjectFiles_Should_ReturnAllProjects()
     {
@@ -60,25 +48,6 @@ public class DotNetUpdaterTests
         using (new AssertionScope())
         {
             packages.Should().BeEquivalentTo(expectedResult);
-        }
-    }
-    
-    [Fact]
-    public async Task GetVersions_Should_ReturnVersionFromCache()
-    {
-        // Arrange
-        var packages = new DependencyDetails("TestName", new Version(1, 0, 0));
-        var projectConfiguration = new Project();
-        var cacheData = new List<DependencyDetails> { new("TestName", new Version(1, 2, 3)) };
-        _memoryCahce.AddEntry(packages.Name, cacheData);
-
-        // Act
-        var result = await _target.GetVersions(packages, projectConfiguration);
-
-        // Assert
-        using (new AssertionScope())
-        {
-            result.Should().BeEquivalentTo(cacheData);
         }
     }
     

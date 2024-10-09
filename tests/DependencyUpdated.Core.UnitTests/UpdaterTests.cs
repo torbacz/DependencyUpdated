@@ -2,11 +2,12 @@ using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
+using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using Serilog;
 using Xunit;
 
@@ -21,6 +22,7 @@ public class UpdaterTests
     private readonly ILogger _logger;
     private readonly Updater _target;
     private readonly string _currentDir;
+    private readonly IMemoryCache _memoryCache;
 
     public UpdaterTests()
     {
@@ -47,7 +49,8 @@ public class UpdaterTests
             .AddKeyedSingleton(_config.Value.RepositoryType, _repositoryProvider)
             .BuildServiceProvider();
         _logger = Substitute.For<ILogger>();
-        _target = new Updater(_serviceProvider, _config, _logger);
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _target = new Updater(_serviceProvider, _config, _logger, _memoryCache);
     }
 
     [Fact]
@@ -369,6 +372,50 @@ public class UpdaterTests
                 _config.Value.Projects[0].Groups[0]);
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
+        }
+    }
+    
+    [Fact]
+    public async Task Update_Should_GetPackageFromCacheIfExists()
+    {
+        // Arrange
+        var projectList = new List<string>() { "TestProjectFile" };
+        _projectUpdater
+            .GetAllProjectFiles(_config.Value.Projects[0].Directories[0])
+            .Returns(projectList);
+        var projectDependencies =
+            new List<DependencyDetails>()
+            {
+                new("TestDependency", new Version(1, 0, 0)),
+            };
+        _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
+        var expectedDependencyUpdate = new List<DependencyDetails>(new[]
+        {
+            new DependencyDetails(projectDependencies[0].Name, new Version(2, 0, 0))
+        });
+        _target.AddToCache(expectedDependencyUpdate[0], expectedDependencyUpdate);
+        var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
+        _projectUpdater
+            .HandleProjectUpdate(projectList,
+                Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
+            .Returns(expectedUpdateResult);
+
+
+        // Act
+        await _target.DoUpdate();
+
+        // Assert
+        using (new AssertionScope())
+        {
+            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+                Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
+            _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
+                _config.Value.Projects[0].Groups[0]);
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+                _config.Value.Projects[0].Groups[0]);
+            _memoryCache.Get(expectedDependencyUpdate[0].Name).Should().BeNull();
         }
     }
 }
