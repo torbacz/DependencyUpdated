@@ -2,6 +2,7 @@
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Projects.Npm.Models;
+using Refit;
 using System.Text.Json;
 
 namespace DependencyUpdated.Projects.Npm;
@@ -61,7 +62,19 @@ internal sealed class NpmUpdater : IProjectUpdater
     public async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,
         Project projectConfiguration)
     {
-      // TODO: Check new versions
-      throw new NotImplementedException();
+        var npmApi = RestService.For<INpmApi>("https://registry.npmjs.org");
+        var data = await npmApi.GetPackageData(package.Name);
+        return data.Versions.Where(x => IsValidVersion(x.Value.Version))
+            .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))).ToList();
+    }
+
+    private static bool IsValidVersion(string data)
+    {
+        if (data.Contains('-'))
+        {
+            return false;
+        }
+
+        return true;
     }
 }
