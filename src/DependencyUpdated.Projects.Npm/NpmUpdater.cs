@@ -27,6 +27,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
         ICollection<DependencyDetails> dependenciesToUpdate)
     {
+        // TODO: Via NPM
         throw new NotImplementedException();
     }
 
