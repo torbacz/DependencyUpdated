@@ -79,6 +79,7 @@ public class NpmUpdaterTests
         using (new AssertionScope())
         {
             updateResult.Should().NotBeNullOrEmpty();
+            updateResult.Should().ContainEquivalentOf(new UpdateResult(depsToUpdate[0].Name, "8.2.14", "9.0.0"));
         }
     }
 }
