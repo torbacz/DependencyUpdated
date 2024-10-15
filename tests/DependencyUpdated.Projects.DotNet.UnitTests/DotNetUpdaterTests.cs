@@ -1,17 +1,27 @@
 using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace DependencyUpdated.Projects.DotNet.UnitTests;
 
 public class DotNetUpdaterTests
 {
-    private readonly DotNetUpdater _target = new();
+    private readonly IProjectUpdater _target;
     private readonly string _searchPath = "Projects";
 
+    public DotNetUpdaterTests()
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.RegisterDotNetServices();
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        _target = serviceProvider.GetRequiredKeyedService<IProjectUpdater>(ProjectType.DotNet);
+    }
+    
     [Fact]
     public void GetAllProjectFiles_Should_ReturnAllProjects()
     {

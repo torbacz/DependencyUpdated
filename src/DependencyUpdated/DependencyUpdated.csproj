@@ -17,6 +17,7 @@
     <ItemGroup>
       <ProjectReference Include="..\DependencyUpdated.Core\DependencyUpdated.Core.csproj" />
       <ProjectReference Include="..\DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj" />
+      <ProjectReference Include="..\DependencyUpdated.Projects.Npm\DependencyUpdated.Projects.Npm.csproj" />
       <ProjectReference Include="..\DependencyUpdated.Repositories.AzureDevOps\DependencyUpdated.Repositories.AzureDevOps.csproj" />
     </ItemGroup>
 

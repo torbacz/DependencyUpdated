@@ -2,6 +2,7 @@
 using DependencyUpdated.Core;
 using DependencyUpdated.Core.Config;
 using DependencyUpdated.Projects.DotNet;
+using DependencyUpdated.Projects.Npm;
 using DependencyUpdated.Repositories.AzureDevOps;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,6 +63,7 @@ public static class Program
             .AddSingleton(TimeProvider.System)
             .AddMemoryCache()
             .RegisterDotNetServices()
+            .RegisterNpmServices()
             .RegisterAzureDevOps()
             .AddOptions<UpdaterConfig>().Bind(_configuration.GetSection("UpdaterConfig"));
 
