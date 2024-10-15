@@ -43,7 +43,6 @@ internal sealed class NpmUpdater : IProjectUpdater
             foreach (var dependency in dependenciesToUpdate)
             {
                 var process = GetProcess(directory, dependency);
-                process.Start();
                 process.WaitForExit();
                 var oldDep = projectDeps.First(x => x.Name == dependency.Name);
                 updates.Add(new UpdateResult(dependency.Name, oldDep.Version.ToString(), dependency.Version.ToString()));
@@ -117,6 +116,7 @@ internal sealed class NpmUpdater : IProjectUpdater
         };
 
         var process = new Process { StartInfo = psi };
+        process.Start();
         using var sw = process.StandardInput;
         sw.WriteLine($"npm install {dependency.Name}@{dependency.Version}");
         sw.WriteLine("exit");
@@ -170,6 +170,7 @@ internal sealed class NpmUpdater : IProjectUpdater
             };
 
             var process = new Process { StartInfo = psi };
+            process.Start();
             using var sw = process.StandardInput;
             sw.WriteLine("npm -v");
             sw.WriteLine("exit");
