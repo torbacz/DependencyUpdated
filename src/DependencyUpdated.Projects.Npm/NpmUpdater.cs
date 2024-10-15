@@ -42,23 +42,8 @@ internal sealed class NpmUpdater : IProjectUpdater
             var projectDeps = ParseProject(path);
             foreach (var dependency in dependenciesToUpdate)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardError = true,
-                    WorkingDirectory = directory
-                };
-
-                var process = new Process { StartInfo = psi };
+                var process = GetProcess(directory, dependency);
                 process.Start();
-
-                using var sw = process.StandardInput;
-                sw.WriteLine($"npm install {dependency.Name}@{dependency.Version}");
-                sw.WriteLine("exit");
                 process.WaitForExit();
                 var oldDep = projectDeps.First(x => x.Name == dependency.Name);
                 updates.Add(new UpdateResult(dependency.Name, oldDep.Version.ToString(), dependency.Version.ToString()));
@@ -87,6 +72,55 @@ internal sealed class NpmUpdater : IProjectUpdater
         var data = await npmApi.GetPackageData(package.Name);
         return data.Versions.Where(x => IsValidVersion(x.Value.Version))
             .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))).ToList();
+    }
+
+    private static Process GetProcess(string? directory, DependencyDetails dependency)
+    {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
+                .Windows))
+        {
+            return ProcessPacakgeWindows(directory, dependency);
+        }
+
+        return ProcessPacakgeGeneric(directory, dependency);
+    }
+
+    private static Process ProcessPacakgeGeneric(string? directory, DependencyDetails dependency)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "npm",
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            Arguments = $"install {dependency.Name}@{dependency.Version}",
+            WorkingDirectory = directory
+        };
+
+        var process = new Process { StartInfo = psi };
+        process.Start();
+        return process;
+    }
+    
+    private static Process ProcessPacakgeWindows(string? directory, DependencyDetails dependency)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            WorkingDirectory = directory
+        };
+
+        var process = new Process { StartInfo = psi };
+        using var sw = process.StandardInput;
+        sw.WriteLine($"npm install {dependency.Name}@{dependency.Version}");
+        sw.WriteLine("exit");
+        return process;
     }
 
     private static HashSet<DependencyDetails> ParseProject(string path)
@@ -136,8 +170,6 @@ internal sealed class NpmUpdater : IProjectUpdater
             };
 
             var process = new Process { StartInfo = psi };
-            process.Start();
-
             using var sw = process.StandardInput;
             sw.WriteLine("npm -v");
             sw.WriteLine("exit");
