@@ -1,15 +1,25 @@
 using DependencyUpdated.Core.Config;
+using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DependencyUpdated.Projects.Npm.UnitTests;
 
 public class NpmUpdaterTests
 {
-    private readonly NpmUpdater _target = new();
+    private readonly IProjectUpdater _target;
     private readonly string _searchPath = "Projects";
+
+    public NpmUpdaterTests()
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.RegisterNpmServices();
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        _target = serviceProvider.GetRequiredKeyedService<IProjectUpdater>(ProjectType.Npm);
+    }
 
     [Fact]
     public async Task ExtractAllPackages_Should_ReturnPackagesFromPackagesJsonFile()
