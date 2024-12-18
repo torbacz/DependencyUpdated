@@ -3,12 +3,13 @@ using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Projects.Npm.Models;
 using Refit;
+using Serilog;
 using System.Diagnostics;
 using System.Text.Json;
 
 namespace DependencyUpdated.Projects.Npm;
 
-internal sealed class NpmUpdater : IProjectUpdater
+internal sealed class NpmUpdater(ILogger logger) : IProjectUpdater
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -177,8 +178,9 @@ internal sealed class NpmUpdater : IProjectUpdater
             process.WaitForExit();
             return process.ExitCode == 0;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.ToString());
             return false;
         }
     }
