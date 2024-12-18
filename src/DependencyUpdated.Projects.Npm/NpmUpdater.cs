@@ -78,13 +78,13 @@ internal sealed class NpmUpdater : IProjectUpdater
         if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
                 .Windows))
         {
-            return ProcessPacakgeWindows(directory, dependency);
+            return ProcessPackageWindows(directory, dependency);
         }
 
-        return ProcessPacakgeGeneric(directory, dependency);
+        return ProcessPackageGeneric(directory, dependency);
     }
 
-    private static Process ProcessPacakgeGeneric(string? directory, DependencyDetails dependency)
+    private static Process ProcessPackageGeneric(string? directory, DependencyDetails dependency)
     {
         var psi = new ProcessStartInfo
         {
@@ -102,7 +102,7 @@ internal sealed class NpmUpdater : IProjectUpdater
         return process;
     }
     
-    private static Process ProcessPacakgeWindows(string? directory, DependencyDetails dependency)
+    private static Process ProcessPackageWindows(string? directory, DependencyDetails dependency)
     {
         var psi = new ProcessStartInfo
         {
@@ -155,32 +155,60 @@ internal sealed class NpmUpdater : IProjectUpdater
         return true;
     }
     
-    private bool IsNpmInstalled()
+    private static bool IsNpmInstalled()
     {
         try
         {
-            var psi = new ProcessStartInfo
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
+                    .Windows))
             {
-                FileName = "cmd.exe",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardError = true
-            };
+                IsNpmInstalledWindows();
+                return true;
+            }
 
-            var process = new Process { StartInfo = psi };
-            process.Start();
-            using var sw = process.StandardInput;
-            sw.WriteLine("npm -v");
-            sw.WriteLine("exit");
-            process.WaitForExit();
-            return process.ExitCode == 0;
+            IsNpmInstalledGeneric();
+            return true;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine(ex.ToString());
             return false;
         }
+    }
+
+    private static void IsNpmInstalledWindows()
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardError = true
+        };
+
+        var process = new Process { StartInfo = psi };
+        process.Start();
+        using var sw = process.StandardInput;
+        sw.WriteLine("npm -v");
+        sw.WriteLine("exit");
+        process.WaitForExit();
+    }
+    
+    private static void IsNpmInstalledGeneric()
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "npm",
+            RedirectStandardOutput = true,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            Arguments = "-v",
+        };
+
+        var process = new Process { StartInfo = psi };
+        process.Start();
+        process.WaitForExit();
     }
 }
