@@ -19,6 +19,11 @@ jobs:
       with:
         dotnet-version: 8.0.x
         
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '23.4.0'
+        
     - name: Restore dependencies
       run: dotnet restore
       
@@ -26,7 +31,6 @@ jobs:
       run: dotnet build --no-restore -c Release
       
     - name: Test
-      continue-on-error: true
       run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
     - name: ReportGenerator
