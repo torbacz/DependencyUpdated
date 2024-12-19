@@ -86,8 +86,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
             return ArraySegment<DependencyDetails>.Empty;
         }
 
-        var basePackages = allPackagesFromProjects.Except(alreadyProcessed);
-
+        var basePackages = allPackagesFromProjects.ExceptBy(alreadyProcessed.Select(x => x.Name), x => x.Name);
         if (project.Include.Count > 0)
         {
             basePackages = basePackages.Where(x => project.Include.Any(include => FileSystemName.MatchesSimpleExpression(include, x.Name)));
