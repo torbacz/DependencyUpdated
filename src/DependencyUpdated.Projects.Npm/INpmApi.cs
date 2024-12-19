@@ -6,5 +6,5 @@ namespace DependencyUpdated.Projects.Npm;
 public interface INpmApi
 {
     [Get("/{packageName}")]
-    Task<NpmPackageInfo> GetPackageData(string packageName);
+    Task<NpmPackageInfo> GetPackageData(string packageName, [Header("Authorization")] string? authorization);
 }

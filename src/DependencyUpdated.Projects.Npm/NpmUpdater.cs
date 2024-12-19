@@ -4,7 +4,10 @@ using DependencyUpdated.Core.Models;
 using DependencyUpdated.Projects.Npm.Models;
 using Refit;
 using System.Diagnostics;
+using System.Net;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace DependencyUpdated.Projects.Npm;
 
@@ -66,11 +69,57 @@ internal sealed class NpmUpdater : IProjectUpdater
     public async Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,
         Project projectConfiguration)
     {
-        #pragma warning disable S1075
-        var npmApi = RestService.For<INpmApi>("https://registry.npmjs.org");
-        var data = await npmApi.GetPackageData(package.Name);
-        return data.Versions.Where(x => IsValidVersion(x.Value.Version))
-            .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))).ToList();
+        if (!projectConfiguration.DependencyConfigurations.Any())
+        {
+            throw new InvalidOperationException(
+                $"Missing {nameof(projectConfiguration.DependencyConfigurations)} in config.");
+        }
+
+        var data = new List<DependencyDetails>();
+        foreach (var depsConfiguration in projectConfiguration.DependencyConfigurations)
+        {
+            try
+            {
+                if (depsConfiguration.StartsWith("http"))
+                {
+                    var npmApi = RestService.For<INpmApi>(depsConfiguration);
+                    var packages = await npmApi.GetPackageData(package.Name, null);
+                    data.AddRange(packages.Versions.Where(x => IsValidVersion(x.Value.Version))
+                        .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))));
+                    continue;
+                }
+
+                if (depsConfiguration.EndsWith(".npmrc"))
+                {
+                    var allText = await File.ReadAllTextAsync(depsConfiguration);
+                    var registryUrlPattern = @"@as:registry=(https\S+)";
+                    var usernamePattern = @"username=(\S+)";
+                    var passwordPattern = @":_password=(\S+)";
+                    var registryUrl = Regex.Match(allText, registryUrlPattern).Groups[1].Value;
+                    var username = Regex.Match(allText, usernamePattern).Groups[1].Value;
+                    var base64Password = Regex.Match(allText, passwordPattern).Groups[1].Value;
+                    var passwordBytes = Convert.FromBase64String(base64Password);
+                    var password = Encoding.UTF8.GetString(passwordBytes);
+                    var credentials = $"{username}:{password}";
+                    var credentialsBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
+                    var npmApi = RestService.For<INpmApi>(registryUrl);
+                    var packages = await npmApi.GetPackageData(package.Name, $"Basic {credentialsBase64}");
+                    data.AddRange(packages.Versions.Where(x => IsValidVersion(x.Value.Version))
+                        .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))));
+                    continue;
+                }
+            }
+            catch (ApiException ex)
+                when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Package not found in source
+                continue;
+            }
+
+            throw new NotSupportedException($"{depsConfiguration} is not supported");
+        }
+
+        return data;
     }
 
     private static Process GetProcess(string? directory, DependencyDetails dependency)
