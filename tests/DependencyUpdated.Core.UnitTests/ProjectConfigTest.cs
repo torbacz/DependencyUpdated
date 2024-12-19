@@ -14,10 +14,10 @@ public class ProjectConfigTest : BaseConfigTest
                 ArraySegment<ValidationResult>.Empty);
             yield return Tuple.Create<IValidatableObject, IEnumerable<ValidationResult>>(
                 CreateValidProject() with { Directories = ArraySegment<string>.Empty },
-                new[]{ new ValidationResult($"{nameof(Project.Directories)} cannot be empty")});
+                new[] { new ValidationResult($"{nameof(Project.Directories)} cannot be empty") });
             yield return Tuple.Create<IValidatableObject, IEnumerable<ValidationResult>>(
                 CreateValidProject() with { Directories = ["TestPath"] },
-                new[]{ new ValidationResult("Path TestPath not found")});
+                new[] { new ValidationResult("Path TestPath not found") });
             yield return Tuple.Create<IValidatableObject, IEnumerable<ValidationResult>>(
                 CreateValidProject() with { EachDirectoryAsSeparate = false, Name = string.Empty },
                 new[]
@@ -34,7 +34,7 @@ public class ProjectConfigTest : BaseConfigTest
                 });
             yield return Tuple.Create<IValidatableObject, IEnumerable<ValidationResult>>(
                 CreateValidProject() with { Groups = ArraySegment<string>.Empty },
-                new[]{ new ValidationResult($"Missing {nameof(Project.Groups)}.")});
+                new[] { new ValidationResult($"Missing {nameof(Project.Groups)}.") });
         }
     }
 

@@ -2,10 +2,7 @@ using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace DependencyUpdated.Projects.DotNet.UnitTests;
 
@@ -46,21 +43,18 @@ public class DotNetUpdaterTests
         var path = Path.Combine("Projects", "SampleProject.csproj");
         var config = new Project() { Version = VersionUpdateType.Patch, Type = ProjectType.DotNet };
         config.ApplyDefaultValue();
-        var expectedResult = new List<DependencyDetails>()
-        {
-            new("Serilog", new Version(3,0,0, 0))
-        };
-        
+        var expectedResult = new List<DependencyDetails>() { new("Serilog", new Version(3, 0, 0, 0)) };
+
         // Act
         var packages = await _target.ExtractAllPackages(new[] { path });
-        
+
         // Assert
         using (new AssertionScope())
         {
             packages.Should().BeEquivalentTo(expectedResult);
         }
     }
-    
+
     [Fact]
     public async Task GetVersions_Should_ThrowForMissingDependencyConfiguration()
     {
@@ -103,8 +97,9 @@ public class DotNetUpdaterTests
         {
             File.Delete(projectToUpdate);
         }
+
         File.Copy("./Projects/SampleProject.csproj", projectToUpdate);
-        
+
         // Act
         var result = _target.HandleProjectUpdate([projectToUpdate],
             new List<DependencyDetails>() { new("Serilog", new Version(4, 0, 0)) });
