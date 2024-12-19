@@ -66,6 +66,11 @@ public sealed record Project : IValidatableObject
             DependencyConfigurations = ["https://api.nuget.org/v3/index.json"];
         }
 
+        if (DependencyConfigurations.Count == 0 && Type == ProjectType.Npm)
+        {
+            DependencyConfigurations = ["https://registry.npmjs.org"];
+        }
+
         if (Groups.Count == 0)
         {
             Groups = ["*"];
