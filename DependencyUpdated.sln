@@ -16,9 +16,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Repositories.AzureDevOps", "src/DependencyUpdated.Repositories.AzureDevOps\DependencyUpdated.Repositories.AzureDevOps.csproj", "{A9181ADC-801D-45BE-B091-CF6C14E6F702}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{35DCECB9-4FF1-4277-8C84-B905A5D1E693}"
-	ProjectSection(SolutionItems) = preProject
-		tests\Directory.Build.props = tests\Directory.Build.props
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyUpdated.Projects.DotNet.UnitTests", "tests\DependencyUpdated.Projects.DotNet.UnitTests\DependencyUpdated.Projects.DotNet.UnitTests.csproj", "{0F4B408D-9B4A-4621-BD67-AB80EB74E14B}"
 EndProject

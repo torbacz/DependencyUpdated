@@ -1,5 +1,4 @@
 using DependencyUpdated.Core.Config;
-using DependencyUpdated.Core.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace DependencyUpdated.Core.UnitTests;

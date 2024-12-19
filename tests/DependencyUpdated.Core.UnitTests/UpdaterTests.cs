@@ -2,14 +2,10 @@ using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using NSubstitute;
 using Serilog;
-using Xunit;
 
 namespace DependencyUpdated.Core.UnitTests;
 
@@ -34,8 +30,8 @@ public class UpdaterTests
                 new()
                 {
                     Name = "TestProjectName",
-                    Version = VersionUpdateType.Major, 
-                    Directories = ["TestDir"], 
+                    Version = VersionUpdateType.Major,
+                    Directories = ["TestDir"],
                     Type = ProjectType.DotNet,
                 }
             ]
@@ -84,7 +80,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -96,7 +91,8 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
@@ -132,7 +128,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -144,7 +139,8 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
@@ -180,7 +176,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -192,7 +187,8 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
@@ -210,8 +206,7 @@ public class UpdaterTests
         var projectDependencies =
             new List<DependencyDetails>()
             {
-                new("TestDependency", new Version(1, 0, 0)),
-                new("Test.Dependency", new Version(1, 0, 0)),
+                new("TestDependency", new Version(1, 0, 0)), new("Test.Dependency", new Version(1, 0, 0)),
             };
         _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
         _projectUpdater.GetVersions(projectDependencies[0], _config.Value.Projects[0])
@@ -240,7 +235,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -252,11 +246,12 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
-    
+
     [Fact]
     public async Task Update_Should_Include()
     {
@@ -269,8 +264,7 @@ public class UpdaterTests
         var projectDependencies =
             new List<DependencyDetails>()
             {
-                new("TestDependency", new Version(1, 0, 0)),
-                new("Test1.Dependency", new Version(1, 0, 0)),
+                new("TestDependency", new Version(1, 0, 0)), new("Test1.Dependency", new Version(1, 0, 0)),
             };
         _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
         _projectUpdater.GetVersions(projectDependencies[0], _config.Value.Projects[0])
@@ -299,7 +293,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -311,11 +304,12 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
-    
+
     [Fact]
     public async Task Update_Should_Exclude()
     {
@@ -328,8 +322,7 @@ public class UpdaterTests
         var projectDependencies =
             new List<DependencyDetails>()
             {
-                new("TestDependency", new Version(1, 0, 0)),
-                new("Test.Dependency", new Version(1, 0, 0)),
+                new("TestDependency", new Version(1, 0, 0)), new("Test.Dependency", new Version(1, 0, 0)),
             };
         _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
         _projectUpdater.GetVersions(projectDependencies[0], _config.Value.Projects[0])
@@ -358,7 +351,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -370,11 +362,12 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
         }
     }
-    
+
     [Fact]
     public async Task Update_Should_GetPackageFromCacheIfExists()
     {
@@ -384,10 +377,7 @@ public class UpdaterTests
             .GetAllProjectFiles(_config.Value.Projects[0].Directories[0])
             .Returns(projectList);
         var projectDependencies =
-            new List<DependencyDetails>()
-            {
-                new("TestDependency", new Version(1, 0, 0)),
-            };
+            new List<DependencyDetails>() { new("TestDependency", new Version(1, 0, 0)), };
         _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
         var expectedDependencyUpdate = new List<DependencyDetails>(new[]
         {
@@ -401,7 +391,6 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
 
-
         // Act
         await _target.DoUpdate();
 
@@ -413,7 +402,8 @@ public class UpdaterTests
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
-            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult, _config.Value.Projects[0].Name,
+            await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
+                _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
             _memoryCache.Get(expectedDependencyUpdate[0].Name).Should().BeNull();
         }

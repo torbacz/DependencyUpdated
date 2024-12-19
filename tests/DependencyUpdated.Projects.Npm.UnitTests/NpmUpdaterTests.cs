@@ -2,8 +2,6 @@ using DependencyUpdated.Core.Config;
 using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DependencyUpdated.Projects.Npm.UnitTests;
@@ -30,14 +28,12 @@ public class NpmUpdaterTests
         config.ApplyDefaultValue();
         var expectedResult = new List<DependencyDetails>()
         {
-            new("@angular/core", new Version(8,2,14)),
-            new("@angular/cli", new Version(8,3,29))
-
+            new("@angular/core", new Version(8, 2, 14)), new("@angular/cli", new Version(8, 3, 29))
         };
-        
+
         // Act
         var packages = await _target.ExtractAllPackages(new[] { path });
-        
+
         // Assert
         using (new AssertionScope())
         {
@@ -52,7 +48,7 @@ public class NpmUpdaterTests
         var config = new Project() { Version = VersionUpdateType.Patch, Type = ProjectType.Npm };
         config.ApplyDefaultValue();
         var dependency = new DependencyDetails("@angular/core", new Version(8, 2, 14));
-        
+
         // Act
         var versions = await _target.GetVersions(dependency, config);
 
@@ -72,16 +68,13 @@ public class NpmUpdaterTests
         {
             File.Delete(projectToUpdate);
         }
+
         File.Copy($"./{_searchPath}/package.json", projectToUpdate);
-        
+
         var config = new Project() { Version = VersionUpdateType.Patch, Type = ProjectType.Npm };
         config.ApplyDefaultValue();
-        var depsToUpdate = new List<DependencyDetails>()
-        {
-            new("@angular/core", new Version(9,0,0)),
+        var depsToUpdate = new List<DependencyDetails>() { new("@angular/core", new Version(9, 0, 0)), };
 
-        };
-        
         // Act
         var updateResult = _target.HandleProjectUpdate([projectToUpdate], depsToUpdate);
 

@@ -1,7 +1,4 @@
-using FluentAssertions;
-using FluentAssertions.Execution;
 using System.ComponentModel.DataAnnotations;
-using Xunit;
 
 namespace DependencyUpdated.Core.UnitTests;
 
