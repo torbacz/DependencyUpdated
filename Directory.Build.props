@@ -5,9 +5,6 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
         <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release' ">true</TreatWarningsAsErrors>
-
-        <IsPackable Condition="$(MSBuildProjectDirectory.Contains('tests'))">false</IsPackable>
-        <IsTestProject Condition="$(MSBuildProjectDirectory.Contains('tests'))">true</IsTestProject>
     </PropertyGroup>
 
     <ItemGroup>
