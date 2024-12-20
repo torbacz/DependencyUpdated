@@ -3,6 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <PackageId>DependencyUpdaterTool</PackageId>
+        <TargetFramework>net9.0</TargetFramework>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>dut</ToolCommandName>
         <PackageReadmeFile>README.MD</PackageReadmeFile>
