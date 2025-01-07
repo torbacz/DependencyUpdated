@@ -25,8 +25,11 @@ internal sealed class NpmUpdater : IProjectUpdater
     
     public IReadOnlyCollection<string> GetAllProjectFiles(string searchPath)
     {
-        return ValidNpmPatterns.SelectMany(dotnetPattern =>
+        var allPaths = ValidNpmPatterns.SelectMany(dotnetPattern =>
             Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories)).ToList();
+        allPaths.RemoveAll(x => x.Contains("node_modules"));
+        allPaths.RemoveAll(x => x.Contains("dist"));
+        return allPaths;
     }
 
     public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
@@ -45,6 +48,11 @@ internal sealed class NpmUpdater : IProjectUpdater
             var projectDeps = ParseProject(path);
             foreach (var dependency in dependenciesToUpdate)
             {
+                if (projectDeps.All(x => x.Name != dependency.Name))
+                {
+                    continue;
+                }
+                
                 var process = GetProcess(directory, dependency);
                 process.WaitForExit();
                 var oldDep = projectDeps.First(x => x.Name == dependency.Name);
@@ -182,13 +190,26 @@ internal sealed class NpmUpdater : IProjectUpdater
             return new HashSet<DependencyDetails>();
         }
 
-        var dependencies = package.Dependencies
-            .Where(x => IsValidVersion(x.Value))
-            .Select(d => new DependencyDetails(d.Key, ParseVersion(d.Value))).ToList();
-        var devDependencies = package.DevDependencies
-            .Where(x => IsValidVersion(x.Value))
-            .Select(d => new DependencyDetails(d.Key, ParseVersion(d.Value))).ToList();
+        var dependencies = ConvertToDependencies(package.Dependencies);
+        var devDependencies = ConvertToDependencies(package.DevDependencies); 
         return dependencies.Concat(devDependencies).ToHashSet();
+    }
+
+    private static ICollection<DependencyDetails> ConvertToDependencies(Dictionary<string, string>? dependencies)
+    {
+        if (dependencies is null)
+        {
+            return Array.Empty<DependencyDetails>();
+        }
+
+        if (dependencies.Count == 0)
+        {
+            return Array.Empty<DependencyDetails>();
+        }
+
+        return dependencies
+            .Where(x => IsValidVersion(x.Value))
+            .Select(d => new DependencyDetails(d.Key, ParseVersion(d.Value))).ToList();
     }
 
     private static Version ParseVersion(string data)
