@@ -22,9 +22,10 @@ public sealed class UpdaterConfig : IValidatableObject
         {
             yield return new ValidationResult($"Value {RepositoryType} is not valid type for {nameof(RepositoryType)}");
         }
-        
-        var projectsNamesDistinctCount = Projects.DistinctBy(x => x.Name).Count();
-        if (projectsNamesDistinctCount != Projects.Count)
+
+        var baseProject = Projects.Where(x => !x.EachDirectoryAsSeparate).ToList();
+        var projectsNamesDistinctCount = baseProject.DistinctBy(x => x.Name).Count();
+        if (projectsNamesDistinctCount != baseProject.Count)
         {
             yield return new ValidationResult("Projects must contains unique names");
         }
