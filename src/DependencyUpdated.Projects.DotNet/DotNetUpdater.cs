@@ -22,11 +22,19 @@ internal sealed class DotNetUpdater : IProjectUpdater
 
     public IReadOnlyCollection<string> GetAllProjectFiles(string searchPath)
     {
-        return Directory
+        var wildcardMatches = ValidDotnetPatterns
+            .Where(pattern => pattern.StartsWith("*."))
+            .SelectMany(pattern => Directory.GetFiles(searchPath, pattern, SearchOption.AllDirectories));
+
+        var caseInsensitiveMatches = Directory
             .EnumerateFiles(searchPath, "*.*", SearchOption.AllDirectories)
             .Where(file =>
-                ValidDotnetPatterns.Any(pattern =>
-                    string.Equals(Path.GetFileName(file), pattern, StringComparison.OrdinalIgnoreCase)))
+                ValidDotnetPatterns
+                    .Where(pattern => !pattern.StartsWith("*.")) // Only process specific filenames
+                    .Any(pattern => string.Equals(Path.GetFileName(file), pattern, StringComparison.OrdinalIgnoreCase)));
+
+        return wildcardMatches
+            .Concat(caseInsensitiveMatches)
             .Distinct()
             .ToList();
     }
