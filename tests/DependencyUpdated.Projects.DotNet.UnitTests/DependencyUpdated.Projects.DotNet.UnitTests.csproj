@@ -12,12 +12,12 @@
       <None Update="Projects\Nuget.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Projects\Directory.Build.props">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <Content Include="Projects\SampleProject.csproj">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <None Update="Projects\Directory.Build.props">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -46,7 +46,26 @@ public class DotNetUpdaterTests
         var expectedResult = new List<DependencyDetails>() { new("Serilog", new Version(3, 0, 0, 0)) };
 
         // Act
-        var packages = await _target.ExtractAllPackages(new[] { path });
+        var packages = await _target.ExtractAllPackages([path]);
+
+        // Assert
+        using (new AssertionScope())
+        {
+            packages.Should().BeEquivalentTo(expectedResult);
+        }
+    }
+    
+    [Fact]
+    public async Task ExtractAllPackages_Should_ReturnPackagesFromDirectoryBuildPropsFile()
+    {
+        // Arrange
+        var path = Path.Combine("Projects", "Directory.Build.props");
+        var config = new Project() { Version = VersionUpdateType.Patch, Type = ProjectType.DotNet };
+        config.ApplyDefaultValue();
+        var expectedResult = new List<DependencyDetails>() { new("Microsoft.CodeAnalysis.CSharp.CodeStyle", new Version(4, 12, 0, 0)) };
+
+        // Act
+        var packages = await _target.ExtractAllPackages([path]);
 
         // Assert
         using (new AssertionScope())
