@@ -41,6 +41,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     }
 
                     logger.Debug("Filtered packages {Packages}", filteredPackages);
+                    alreadyProcessed.AddRange(filteredPackages);
                     var allDependenciesToUpdate = await GetLatestVersions(filteredPackages, updater, project);
                     if (allDependenciesToUpdate.Count == 0)
                     {
@@ -55,7 +56,6 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     }
 
                     logger.Information("Updated packages {Packages}", allUpdates);
-                    alreadyProcessed.AddRange(allDependenciesToUpdate);
                     repositoryProvider.CommitChanges(repositoryPath, projectName, group);
                     await repositoryProvider.SubmitPullRequest(allUpdates, projectName, group);
                     repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
