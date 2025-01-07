@@ -22,14 +22,18 @@ internal sealed class NpmUpdater : IProjectUpdater
     [
         "package.json",
     ];
-    
+
     public IReadOnlyCollection<string> GetAllProjectFiles(string searchPath)
     {
-        var allPaths = ValidNpmPatterns.SelectMany(dotnetPattern =>
-            Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories)).ToList();
-        allPaths.RemoveAll(x => x.Contains("node_modules"));
-        allPaths.RemoveAll(x => x.Contains("dist"));
-        return allPaths;
+        return Directory
+            .EnumerateFiles(searchPath, "*.*", SearchOption.AllDirectories)
+            .Where(file =>
+                ValidNpmPatterns.Any(pattern =>
+                    string.Equals(Path.GetFileName(file), pattern, StringComparison.OrdinalIgnoreCase)))
+            .Where(x => !x.Contains("node_modules"))
+            .Where(x => !x.Contains("dist"))
+            .Distinct()
+            .ToList();
     }
 
     public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,

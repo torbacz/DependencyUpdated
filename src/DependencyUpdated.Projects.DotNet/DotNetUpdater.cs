@@ -17,14 +17,18 @@ internal sealed class DotNetUpdater : IProjectUpdater
     [
         "*.csproj",
         "*.nfproj",
-        "Directory.build.props",
         "directory.build.props"
     ];
 
     public IReadOnlyCollection<string> GetAllProjectFiles(string searchPath)
     {
-        return ValidDotnetPatterns.SelectMany(dotnetPattern =>
-            Directory.GetFiles(searchPath, dotnetPattern, SearchOption.AllDirectories)).Distinct().ToList();
+        return Directory
+            .EnumerateFiles(searchPath, "*.*", SearchOption.AllDirectories)
+            .Where(file =>
+                ValidDotnetPatterns.Any(pattern =>
+                    string.Equals(Path.GetFileName(file), pattern, StringComparison.OrdinalIgnoreCase)))
+            .Distinct()
+            .ToList();
     }
 
     public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
