@@ -3,12 +3,6 @@
         <TargetFramework>net8.0</TargetFramework>
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
-    
-    <ItemGroup>
-      <Content Include="Projects\SampleProject.csproj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\DependencyUpdated.Projects.DotNet\DependencyUpdated.Projects.DotNet.csproj" />
@@ -18,6 +12,12 @@
       <None Update="Projects\Nuget.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Projects\Directory.Build.props">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <Content Include="Projects\SampleProject.csproj">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

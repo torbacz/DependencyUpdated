@@ -23,7 +23,7 @@ public class DotNetUpdaterTests
     public void GetAllProjectFiles_Should_ReturnAllProjects()
     {
         // Arrange
-        var expectedResult = new[] { Path.Combine("Projects", "SampleProject.csproj") };
+        var expectedResult = new[] { Path.Combine("Projects", "SampleProject.csproj"), Path.Combine("Projects", "Directory.Build.props") };
         
         // Act
         var result = _target.GetAllProjectFiles(_searchPath);
@@ -31,7 +31,7 @@ public class DotNetUpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            result.Count.Should().Be(1);
+            result.Count.Should().Be(2);
             result.Should().ContainInOrder(expectedResult);
         }
     }
