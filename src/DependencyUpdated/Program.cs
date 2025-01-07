@@ -56,6 +56,7 @@ public static class Program
     {
         var services = new ServiceCollection();
         var logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(_configuration)
             .WriteTo.Console()
             .CreateLogger();
         services
