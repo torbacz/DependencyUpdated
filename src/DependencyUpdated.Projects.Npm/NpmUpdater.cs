@@ -20,7 +20,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     
     private static readonly string[] ValidNpmPatterns =
     [
-        "packages.json",
+        "package.json",
     ];
     
     public IReadOnlyCollection<string> GetAllProjectFiles(string searchPath)
@@ -176,27 +176,34 @@ internal sealed class NpmUpdater : IProjectUpdater
     {
         var json = File.ReadAllText(path);
         var package = JsonSerializer.Deserialize<PackageRoot>(json, JsonSerializerOptions);
-        
+
         if (package is null)
         {
             return new HashSet<DependencyDetails>();
         }
 
         var dependencies = package.Dependencies
+            .Where(x => IsValidVersion(x.Value))
             .Select(d => new DependencyDetails(d.Key, ParseVersion(d.Value))).ToList();
         var devDependencies = package.DevDependencies
+            .Where(x => IsValidVersion(x.Value))
             .Select(d => new DependencyDetails(d.Key, ParseVersion(d.Value))).ToList();
         return dependencies.Concat(devDependencies).ToHashSet();
     }
 
     private static Version ParseVersion(string data)
     {
-        return new Version(data.TrimStart('^').TrimStart('~'));
+        return new Version(data.TrimStart('^', '~'));
     }
 
     private static bool IsValidVersion(string data)
     {
         if (data.Contains('-'))
+        {
+            return false;
+        }
+
+        if (data.Contains('~') && !data.StartsWith('~'))
         {
             return false;
         }

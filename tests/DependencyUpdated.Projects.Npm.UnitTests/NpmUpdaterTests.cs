@@ -85,4 +85,20 @@ public class NpmUpdaterTests
             updateResult.Should().ContainEquivalentOf(new UpdateResult(depsToUpdate[0].Name, "8.2.14", "9.0.0"));
         }
     }
+
+    [Fact]
+    public void GetAllProjectFiles_Should_ReturnAllProjects()
+    {
+        // Arrange
+        var expectedResult = new[] { Path.Combine(_searchPath, "package.json") };
+        
+        // Act
+        var result = _target.GetAllProjectFiles(_searchPath);
+        
+        // Assert
+        using (new AssertionScope())
+        {
+            result.Should().BeEquivalentTo(expectedResult);
+        }
+    }
 }
