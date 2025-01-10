@@ -75,7 +75,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "1.1.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -86,7 +86,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -123,7 +123,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "1.0.2") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -134,7 +134,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -171,7 +171,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -182,7 +182,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -230,7 +230,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[1].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -241,7 +241,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -288,7 +288,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[1].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -299,7 +299,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -346,7 +346,7 @@ public class UpdaterTests
         });
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -357,7 +357,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -386,7 +386,7 @@ public class UpdaterTests
         _target.AddToCache(expectedDependencyUpdate[0], expectedDependencyUpdate);
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
@@ -397,7 +397,7 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -445,7 +445,7 @@ public class UpdaterTests
         });
         var expectedUpdateResultFirst = new List<UpdateResult> { new(projectDependencies[1].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdateFirst)))
             .Returns(expectedUpdateResultFirst);
@@ -455,7 +455,7 @@ public class UpdaterTests
         });
         var expectedUpdateResultSecond = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
         _projectUpdater
-            .HandleProjectUpdate(projectList,
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdateSecond)))
             .Returns(expectedUpdateResultSecond);
@@ -466,10 +466,10 @@ public class UpdaterTests
         // Assert
         using (new AssertionScope())
         {
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdateFirst)));
-            _projectUpdater.Received(1).HandleProjectUpdate(projectList,
+            _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection.SequenceEqual(expectedDependencyUpdateSecond)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,

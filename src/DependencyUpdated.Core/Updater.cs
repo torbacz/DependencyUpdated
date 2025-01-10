@@ -49,7 +49,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     }
 
                     logger.Verbose("Found new versions: {Packages}", allDependenciesToUpdate);
-                    var allUpdates = updater.HandleProjectUpdate(projectFiles, allDependenciesToUpdate);
+                    var allUpdates = updater.HandleProjectUpdate(project, projectFiles, allDependenciesToUpdate);
                     if (allUpdates.Count == 0)
                     {
                         continue;

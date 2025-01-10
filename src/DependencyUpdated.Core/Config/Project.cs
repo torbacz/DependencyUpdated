@@ -11,8 +11,10 @@ public sealed record Project : IValidatableObject
 
     public string Name { get; set; } = default!;
 
-    public bool EachDirectoryAsSeparate { get; set; } = false;
+    public bool EachDirectoryAsSeparate { get; set; }
 
+    public bool UseLegacyDependencies { get; set; }
+    
     public IReadOnlyList<string> DependencyConfigurations { get; set; } = [];
     
     public IReadOnlyList<string> Directories { get; set; } = [];
