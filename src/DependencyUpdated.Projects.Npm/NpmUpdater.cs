@@ -147,7 +147,7 @@ internal sealed class NpmUpdater : IProjectUpdater
 
     private static Process ProcessPackageGeneric(Project project, string? directory, DependencyDetails dependency)
     {
-        var command = $"npm install {dependency.Name}@{dependency.Version}";
+        var command = $"install {dependency.Name}@{dependency.Version}";
         if (project.UseLegacyDependencies)
         {
             command += " --legacy-peer-deps";
