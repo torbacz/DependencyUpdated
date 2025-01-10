@@ -39,7 +39,7 @@ internal sealed class DotNetUpdater : IProjectUpdater
             .ToList();
     }
 
-    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
+    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(Project project, IReadOnlyCollection<string> fullPath,
         ICollection<DependencyDetails> dependenciesToUpdate)
     {
         return UpdateCsProj(fullPath, dependenciesToUpdate);
@@ -101,7 +101,10 @@ internal sealed class DotNetUpdater : IProjectUpdater
 
         var result = allVersions
             .DistinctBy(x => x.Version)
-            .Select(x => package with { Version = x.Version })
+            .Select(x => package with
+            {
+                Version = x.Version
+            })
             .ToHashSet();
         return result;
     }

@@ -9,7 +9,7 @@ public interface IProjectUpdater
 
     IReadOnlyCollection<string> GetAllProjectFiles(string searchPath);
 
-    IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
+    IReadOnlyCollection<UpdateResult> HandleProjectUpdate(Project project, IReadOnlyCollection<string> fullPath,
         ICollection<DependencyDetails> dependenciesToUpdate);
 
     Task<IReadOnlyCollection<DependencyDetails>> GetVersions(DependencyDetails package,

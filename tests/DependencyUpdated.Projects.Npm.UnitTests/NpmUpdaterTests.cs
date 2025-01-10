@@ -76,7 +76,7 @@ public class NpmUpdaterTests
         var depsToUpdate = new List<DependencyDetails>() { new("@angular/core", new Version(9, 0, 0)), };
 
         // Act
-        var updateResult = _target.HandleProjectUpdate([projectToUpdate], depsToUpdate);
+        var updateResult = _target.HandleProjectUpdate(config, [projectToUpdate], depsToUpdate);
 
         // Assert
         using (new AssertionScope())

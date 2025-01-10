@@ -111,6 +111,7 @@ public class DotNetUpdaterTests
     public async Task UpdateCsProj_Should_UpdateVersion()
     {
         // Arrange
+        var projectConfiguration = new Project() { Type = ProjectType.DotNet };
         var projectToUpdate = "testProj.csproj";
         if (File.Exists(projectToUpdate))
         {
@@ -120,7 +121,7 @@ public class DotNetUpdaterTests
         File.Copy("./Projects/SampleProject.csproj", projectToUpdate);
 
         // Act
-        var result = _target.HandleProjectUpdate([projectToUpdate],
+        var result = _target.HandleProjectUpdate(projectConfiguration, [projectToUpdate],
             new List<DependencyDetails>() { new("Serilog", new Version(4, 0, 0)) });
 
         // Assert

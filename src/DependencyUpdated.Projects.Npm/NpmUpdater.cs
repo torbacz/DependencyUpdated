@@ -36,7 +36,7 @@ internal sealed class NpmUpdater : IProjectUpdater
             .ToList();
     }
 
-    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(IReadOnlyCollection<string> fullPath,
+    public IReadOnlyCollection<UpdateResult> HandleProjectUpdate(Project project, IReadOnlyCollection<string> fullPath,
         ICollection<DependencyDetails> dependenciesToUpdate)
     {
         if (!IsNpmInstalled())
@@ -57,7 +57,7 @@ internal sealed class NpmUpdater : IProjectUpdater
                     continue;
                 }
                 
-                var process = GetProcess(directory, dependency);
+                var process = GetProcess(project, directory, dependency);
                 process.WaitForExit();
                 var oldDep = projectDeps.First(x => x.Name == dependency.Name);
                 updates.Add(new UpdateResult(dependency.Name, oldDep.Version.ToString(), dependency.Version.ToString()));
@@ -134,19 +134,25 @@ internal sealed class NpmUpdater : IProjectUpdater
         return data;
     }
 
-    private static Process GetProcess(string? directory, DependencyDetails dependency)
+    private static Process GetProcess(Project project, string? directory, DependencyDetails dependency)
     {
         if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
                 .Windows))
         {
-            return ProcessPackageWindows(directory, dependency);
+            return ProcessPackageWindows(project, directory, dependency);
         }
 
-        return ProcessPackageGeneric(directory, dependency);
+        return ProcessPackageGeneric(project, directory, dependency);
     }
 
-    private static Process ProcessPackageGeneric(string? directory, DependencyDetails dependency)
+    private static Process ProcessPackageGeneric(Project project, string? directory, DependencyDetails dependency)
     {
+        var command = $"install {dependency.Name}@{dependency.Version}";
+        if (project.UseLegacyDependencies)
+        {
+            command += " --legacy-peer-deps";
+        }
+        
         var psi = new ProcessStartInfo
         {
             FileName = "npm",
@@ -154,17 +160,26 @@ internal sealed class NpmUpdater : IProjectUpdater
             CreateNoWindow = true,
             UseShellExecute = false,
             RedirectStandardError = true,
-            Arguments = $"install {dependency.Name}@{dependency.Version}",
+            Arguments = command,
             WorkingDirectory = directory
         };
 
-        var process = new Process { StartInfo = psi };
+        var process = new Process
+        {
+            StartInfo = psi
+        };
         process.Start();
         return process;
     }
     
-    private static Process ProcessPackageWindows(string? directory, DependencyDetails dependency)
+    private static Process ProcessPackageWindows(Project project, string? directory, DependencyDetails dependency)
     {
+        var command = $"npm install {dependency.Name}@{dependency.Version}";
+        if (project.UseLegacyDependencies)
+        {
+            command += " --legacy-peer-deps";
+        }
+        
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
@@ -176,10 +191,13 @@ internal sealed class NpmUpdater : IProjectUpdater
             WorkingDirectory = directory
         };
 
-        var process = new Process { StartInfo = psi };
+        var process = new Process
+        {
+            StartInfo = psi
+        };
         process.Start();
         using var sw = process.StandardInput;
-        sw.WriteLine($"npm install {dependency.Name}@{dependency.Version}");
+        sw.WriteLine(command);
         sw.WriteLine("exit");
         return process;
     }
