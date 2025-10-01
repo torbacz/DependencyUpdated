@@ -4,6 +4,7 @@ using DependencyUpdated.Core.Models;
 using DependencyUpdated.Projects.Npm.Models;
 using Refit;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -134,6 +135,7 @@ internal sealed class NpmUpdater : IProjectUpdater
         return data;
     }
 
+    [ExcludeFromCodeCoverage]
     private static Process GetProcess(Project project, string? directory, DependencyDetails dependency)
     {
         if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform
@@ -145,6 +147,7 @@ internal sealed class NpmUpdater : IProjectUpdater
         return ProcessPackageGeneric(project, directory, dependency);
     }
 
+    [ExcludeFromCodeCoverage]
     private static Process ProcessPackageGeneric(Project project, string? directory, DependencyDetails dependency)
     {
         var command = $"install {dependency.Name}@{dependency.Version}";
@@ -171,7 +174,8 @@ internal sealed class NpmUpdater : IProjectUpdater
         process.Start();
         return process;
     }
-    
+
+    [ExcludeFromCodeCoverage]
     private static Process ProcessPackageWindows(Project project, string? directory, DependencyDetails dependency)
     {
         var command = $"npm install {dependency.Name}@{dependency.Version}";
@@ -253,7 +257,8 @@ internal sealed class NpmUpdater : IProjectUpdater
 
         return true;
     }
-    
+
+    [ExcludeFromCodeCoverage]
     private static bool IsNpmInstalled()
     {
         try
@@ -274,6 +279,7 @@ internal sealed class NpmUpdater : IProjectUpdater
         }
     }
 
+    [ExcludeFromCodeCoverage]
     private static void IsNpmInstalledWindows()
     {
         var psi = new ProcessStartInfo
@@ -293,7 +299,8 @@ internal sealed class NpmUpdater : IProjectUpdater
         sw.WriteLine("exit");
         process.WaitForExit();
     }
-    
+
+    [ExcludeFromCodeCoverage]
     private static void IsNpmInstalledGeneric()
     {
         var psi = new ProcessStartInfo
