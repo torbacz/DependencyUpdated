@@ -52,7 +52,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         Commands.Checkout(repo, branch);
     }
 
-    public void CommitChanges(string repositoryPath, string projectName, string group)
+    public bool CommitChanges(string repositoryPath, string projectName, string group)
     {
         var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
         logger.Information("Commiting {Repository} to branch {Branch}", repositoryPath, gitBranchName);
@@ -62,7 +62,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         if (!status.IsDirty)
         {
             logger.Information("No changes to commit");
-            return;
+            return false;
         }
         
         Commands.Stage(repo, "*");
@@ -72,6 +72,7 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var branch = GetGitBranch(repo, gitBranchName);
         var options = new PushOptions { CredentialsProvider = CreateGitCredentialsProvider() };
         repo.Network.Push(branch, options);
+        return true;
     }
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
