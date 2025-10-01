@@ -56,7 +56,13 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     }
 
                     logger.Information("Updated packages {Packages}", allUpdates);
-                    repositoryProvider.CommitChanges(repositoryPath, projectName, group);
+                    var result = repositoryProvider.CommitChanges(repositoryPath, projectName, group);
+                    if (!result)
+                    {
+                        logger.Debug("No changes detected. Skipping pull request");
+                        continue;
+                    }
+
                     await repositoryProvider.SubmitPullRequest(allUpdates, projectName, group);
                     repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
                 }
