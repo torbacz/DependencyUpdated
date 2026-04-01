@@ -41,16 +41,28 @@ jobs:
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
 
-    - name: Create a status check for the code coverage results
-      id: dotnet-coverage-check
+    - name: Process coverage summary for normal PRs
+      if: ${{ github.actor != 'dependabot[bot]' }}
       uses: im-open/process-code-coverage-summary@v2.2.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         summary-file: './coverage-results/Summary.md'
-        #create-status-check: true
+        create-status-check: true
         create-pr-comment: true
         update-comment-if-one-exists: true
         update-comment-key: 'dotnet'
-        ignore-threshold-failures: false 
+        ignore-threshold-failures: false
+        line-threshold: 80
+        branch-threshold: 80
+    
+    - name: Process coverage summary for Dependabot
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: im-open/process-code-coverage-summary@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/Summary.md'
+        create-status-check: false
+        create-pr-comment: false
+        ignore-threshold-failures: false
         line-threshold: 80
         branch-threshold: 80
