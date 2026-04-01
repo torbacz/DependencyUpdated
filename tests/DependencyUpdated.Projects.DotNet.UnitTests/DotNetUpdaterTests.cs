@@ -94,7 +94,7 @@ public class DotNetUpdaterTests
         var projectConfiguration = new Project() { Type = ProjectType.DotNet };
         projectConfiguration.ApplyDefaultValue();
         projectConfiguration.DependencyConfigurations = projectConfiguration.DependencyConfigurations
-            .Concat(new[] { "./Projects/Nuget.config" }).ToArray();
+            .Concat(new[] { "./Projects/nuget.config" }).ToArray();
 
         // Act
         var result = await _target.GetVersions(packages, projectConfiguration);

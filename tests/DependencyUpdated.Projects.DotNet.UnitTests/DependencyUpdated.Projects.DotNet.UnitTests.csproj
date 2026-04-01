@@ -9,7 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Projects\Nuget.config">
+      <None Update="Projects\nuget.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <Content Include="Projects\SampleProject.csproj">
