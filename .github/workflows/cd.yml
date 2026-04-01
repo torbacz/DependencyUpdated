@@ -1,33 +1,106 @@
 name: CD
 
 on:
-  push:
-    branches: [main]
-
+  schedule:
+    - cron: '0 2 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
 
-    - name: Set version number
-      run: echo "PACKAGE_VERSION=1.0.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 9.0.x
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build
-      run: dotnet build --no-restore -c Release
-    
-    - name: Pack
-      run: dotnet pack -p:PackageVersion=$PACKAGE_VERSION -c Release
+      - name: Find last successful CD run on main
+        id: last_success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflowName = context.workflow;
+            const branch = 'main';
 
-    - name: Push generated package to NuGet registry
-      run: dotnet nuget push src/DependencyUpdated/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflowName,
+              branch,
+              status: 'completed',
+              per_page: 50
+            });
+
+            const currentRunId = context.runId;
+
+            const previousSuccess = runs.data.workflow_runs.find(run =>
+              run.id !== currentRunId && run.conclusion === 'success'
+            );
+
+            if (!previousSuccess) {
+              core.setOutput('found', 'false');
+              core.setOutput('sha', '');
+              core.info('No previous successful run found.');
+              return;
+            }
+
+            core.setOutput('found', 'true');
+            core.setOutput('sha', previousSuccess.head_sha);
+            core.info(`Last successful run SHA: ${previousSuccess.head_sha}`);
+
+      - name: Check whether main changed since last successful run
+        id: changes
+        run: |
+          CURRENT_SHA=$(git rev-parse HEAD)
+          LAST_SHA="${{ steps.last_success.outputs.sha }}"
+
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ steps.last_success.outputs.found }}" != "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "No previous successful run found, so this run will publish."
+          elif [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes since last successful run."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected since last successful run."
+          fi
+
+      - name: Stop when there are no changes
+        if: steps.changes.outputs.changed != 'true'
+        run: |
+          echo "Nothing to publish."
+          exit 0
+
+      - name: Set version number
+        if: steps.changes.outputs.changed == 'true'
+        run: echo "PACKAGE_VERSION=1.0.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+
+      - name: Setup .NET
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: dotnet restore
+
+      - name: Build
+        if: steps.changes.outputs.changed == 'true'
+        run: dotnet build --no-restore -c Release
+
+      - name: Pack
+        if: steps.changes.outputs.changed == 'true'
+        run: dotnet pack -p:PackageVersion=$PACKAGE_VERSION -c Release
+
+      - name: Push generated package to NuGet registry
+        if: steps.changes.outputs.changed == 'true'
+        run: dotnet nuget push src/DependencyUpdated/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
