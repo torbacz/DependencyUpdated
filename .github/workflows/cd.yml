@@ -25,13 +25,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const workflowName = context.workflow;
+            const workflowFile = 'cd.yml';
             const branch = 'main';
 
             const runs = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: workflowName,
+              workflow_id: workflowFile,
               branch,
               status: 'completed',
               per_page: 50
