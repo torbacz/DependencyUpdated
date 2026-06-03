@@ -525,4 +525,43 @@ public class UpdaterTests
                 _config.Value.Projects[0].Groups[0]);
         }
     }
+
+    [Fact]
+    public async Task Update_Should_CleanRepositoryAfterNoopCommit()
+    {
+        // Arrange
+        _config.Value.Projects[0].Version = VersionUpdateType.Major;
+        var projectList = new List<string>() { "TestProjectFile" };
+        _projectUpdater
+            .GetAllProjectFiles(_config.Value.Projects[0].Directories[0])
+            .Returns(projectList);
+        var projectDependencies =
+            new List<DependencyDetails>() { new("TestDependency", new Version(1, 0, 0)), };
+        _projectUpdater.ExtractAllPackages(projectList).Returns(projectDependencies);
+        _projectUpdater.GetVersions(projectDependencies[0], _config.Value.Projects[0])
+            .Returns(new List<DependencyDetails>
+            {
+                new(projectDependencies[0].Name, new Version(2, 0, 0)),
+                new(projectDependencies[0].Name, new Version(1, 1, 0)),
+                new(projectDependencies[0].Name, new Version(1, 0, 2)),
+            });
+
+        var expectedDependencyUpdate = new List<DependencyDetails>(new[]
+        {
+            new DependencyDetails(projectDependencies[0].Name, new Version(2, 0, 0))
+        });
+        var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
+        _projectUpdater
+            .HandleProjectUpdate(_config.Value.Projects[0], projectList,
+                Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
+            .Returns(expectedUpdateResult);
+        _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name, _config.Value.Projects[0].Groups[0]).Returns(false);
+
+        // Act
+        await _target.DoUpdate();
+
+        // Assert
+        _repositoryProvider.Received(2).CleanAndSwitchToDefaultBranch(_currentDir);
+    }
 }
