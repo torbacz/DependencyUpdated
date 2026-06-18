@@ -46,12 +46,12 @@ jobs:
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
 
-    - name: Create a status check for the code coverage results
+    - name: Create a comment for the code coverage results
       uses: im-open/process-code-coverage-summary@v2.2.3
       with:
         github-token: ${{ secrets.COVERAGE_PAT }}
         summary-file: './coverage-results/Summary.md'
-        create-status-check: true
+        create-status-check: false
         create-pr-comment: true
         update-comment-if-one-exists: true
         update-comment-key: 'dotnet'
