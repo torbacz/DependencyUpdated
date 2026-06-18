@@ -26,11 +26,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const headSha = context.payload.pull_request.head.sha;
+            const pullRequestNumber = context.payload.pull_request.number;
             const runs = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              branch: context.payload.pull_request.head.ref,
+              event: 'pull_request',
               status: 'completed',
               per_page: 100,
             });
@@ -38,11 +38,12 @@ jobs:
             const ciRun = runs.data.workflow_runs.find(run =>
               run.name === 'CI' &&
               run.conclusion === 'success' &&
-              run.head_sha === headSha
+              Array.isArray(run.pull_requests) &&
+              run.pull_requests.some(pr => pr.number === pullRequestNumber)
             );
 
             if (!ciRun) {
-              core.setFailed(`Successful CI run not found for PR head ${headSha}.`);
+              core.setFailed(`Successful CI run not found for PR #${pullRequestNumber}.`);
               return;
             }
 
