@@ -4,7 +4,7 @@
 name: CI
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [ "main" ]
 
 jobs:
@@ -13,9 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-        fetch-depth: 0
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -44,15 +41,8 @@ jobs:
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
 
-    - name: Create a status check for the code coverage results
-      uses: im-open/process-code-coverage-summary@v2.2.3
+    - name: Upload coverage summary artifact
+      uses: actions/upload-artifact@v4
       with:
-        github-token: ${{ secrets.COVERAGE_PAT }}
-        summary-file: './coverage-results/Summary.md'
-        create-status-check: true
-        create-pr-comment: true
-        update-comment-if-one-exists: true
-        update-comment-key: 'dotnet'
-        ignore-threshold-failures: false
-        line-threshold: 80
-        branch-threshold: 80
+        name: coverage-results
+        path: ./coverage-results/Summary.md
