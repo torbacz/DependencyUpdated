@@ -54,8 +54,24 @@ jobs:
         summary-file: './coverage-results/Summary.md'
         create-status-check: true
         create-pr-comment: true
+        check-name: code coverage
         update-comment-if-one-exists: true
         update-comment-key: 'dotnet'
+        ignore-threshold-failures: false
+        line-threshold: 80
+        branch-threshold: 80
+
+    - name: Process coverage summary for Dependabot
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: im-open/process-code-coverage-summary@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/Summary.md'
+        create-status-check: true
+        create-pr-comment: true
+        check-name: code coverage (dependabot)
+        update-comment-if-one-exists: true
+        update-comment-key: 'dotnet-dependabot'
         ignore-threshold-failures: false
         line-threshold: 80
         branch-threshold: 80
