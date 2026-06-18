@@ -1,0 +1,41 @@
+name: Coverage Summary
+
+on:
+  workflow_run:
+    workflows: [ "CI" ]
+    types:
+      - completed
+
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+  actions: read
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download coverage summary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-results
+          path: ./coverage-results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Process coverage summary
+        uses: im-open/process-code-coverage-summary@v2.2.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          summary-file: './coverage-results/Summary.md'
+          create-status-check: true
+          create-pr-comment: true
+          update-comment-if-one-exists: true
+          update-comment-key: 'dotnet'
+          ignore-threshold-failures: false
+          line-threshold: 80
+          branch-threshold: 80
