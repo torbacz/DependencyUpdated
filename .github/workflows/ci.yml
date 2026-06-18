@@ -46,12 +46,13 @@ jobs:
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
 
-    - name: Create a comment for the code coverage results
+    - name: Process coverage summary for normal PRs
+      if: ${{ github.actor != 'dependabot[bot]' }}
       uses: im-open/process-code-coverage-summary@v2.2.3
       with:
-        github-token: ${{ secrets.COVERAGE_PAT }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         summary-file: './coverage-results/Summary.md'
-        create-status-check: false
+        create-status-check: true
         create-pr-comment: true
         update-comment-if-one-exists: true
         update-comment-key: 'dotnet'
