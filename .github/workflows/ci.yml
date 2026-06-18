@@ -7,29 +7,34 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-        
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '23.4.0'
-        
+
     - name: Restore dependencies
       run: dotnet restore
-      
+
     - name: Build
       run: dotnet build --no-restore -c Release
-      
+
     - name: Test
       run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
@@ -41,8 +46,32 @@ jobs:
         title: dotnet code coverage
         reporttypes: 'MarkdownSummary;'
 
-    - name: Upload coverage summary artifact
-      uses: actions/upload-artifact@v4
+    - name: Process coverage summary for normal PRs
+      if: ${{ github.actor != 'dependabot[bot]' }}
+      uses: im-open/process-code-coverage-summary@v2.2.3
       with:
-        name: coverage-results
-        path: ./coverage-results/Summary.md
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/Summary.md'
+        create-status-check: true
+        create-pr-comment: true
+        check-name: code coverage
+        update-comment-if-one-exists: true
+        update-comment-key: 'dotnet'
+        ignore-threshold-failures: false
+        line-threshold: 80
+        branch-threshold: 80
+
+    - name: Process coverage summary for Dependabot
+      if: ${{ github.actor == 'dependabot[bot]' }}
+      uses: im-open/process-code-coverage-summary@v2.2.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        summary-file: './coverage-results/Summary.md'
+        create-status-check: true
+        create-pr-comment: true
+        check-name: code coverage (dependabot)
+        update-comment-if-one-exists: true
+        update-comment-key: 'dotnet-dependabot'
+        ignore-threshold-failures: false
+        line-threshold: 80
+        branch-threshold: 80
