@@ -37,12 +37,9 @@ public sealed record Project : IValidatableObject
             yield return new ValidationResult($"{nameof(Directories)} cannot be empty");
         }
 
-        foreach (var directory in Directories)
+        foreach (var directory in Directories.Where(directory => !Path.Exists(directory)))
         {
-            if (!Path.Exists(directory))
-            {
-                yield return new ValidationResult($"Path {directory} not found"); 
-            }
+            yield return new ValidationResult($"Path {directory} not found");
         }
 
         if (!EachDirectoryAsSeparate && string.IsNullOrEmpty(Name))
