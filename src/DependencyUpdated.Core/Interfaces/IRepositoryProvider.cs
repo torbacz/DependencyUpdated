@@ -10,5 +10,7 @@ public interface IRepositoryProvider
 
     public bool CommitChanges(string repositoryPath, string projectName, string group);
 
+    public void PushChanges(string repositoryPath, string projectName, string group);
+
     public Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group);
 }

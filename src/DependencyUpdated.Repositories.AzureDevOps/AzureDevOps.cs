@@ -69,10 +69,17 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         var author = new Signature(config.Value.AzureDevOps.Username, config.Value.AzureDevOps.Email,
             timeProvider.GetUtcNow());
         repo.Commit(GitCommitMessage, author, author);
+        return true;
+    }
+
+    public void PushChanges(string repositoryPath, string projectName, string group)
+    {
+        var gitBranchName = CreateGitBranchName(projectName, config.Value.AzureDevOps.BranchName, group);
+        logger.Information("Pushing {Repository} to branch {Branch}", repositoryPath, gitBranchName);
+        using var repo = new Repository(repositoryPath);
         var branch = GetGitBranch(repo, gitBranchName);
         var options = new PushOptions { CredentialsProvider = CreateGitCredentialsProvider() };
         repo.Network.Push(branch, options);
-        return true;
     }
 
     public async Task SubmitPullRequest(IReadOnlyCollection<UpdateResult> updates, string projectName, string group)
