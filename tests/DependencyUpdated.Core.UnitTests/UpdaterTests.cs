@@ -41,6 +41,7 @@ public class UpdaterTests
         _repositoryProvider = Substitute.For<IRepositoryProvider>();
         _projectUpdater = Substitute.For<IProjectUpdater>();
         _serviceProvider = new ServiceCollection()
+            .AddMemoryCache()
             .AddKeyedSingleton(_config.Value.Projects[0].Type, _projectUpdater)
             .AddKeyedSingleton(_config.Value.RepositoryType, _repositoryProvider)
             .BuildServiceProvider();
@@ -383,7 +384,7 @@ public class UpdaterTests
         {
             new DependencyDetails(projectDependencies[0].Name, new Version(2, 0, 0))
         });
-        _target.AddToCache(expectedDependencyUpdate[0], expectedDependencyUpdate);
+        _memoryCache.Set(expectedDependencyUpdate[0].Name, expectedDependencyUpdate);
         var expectedUpdateResult = new List<UpdateResult> { new(projectDependencies[0].Name, "1.0.0", "2.0.0") };
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
@@ -402,6 +403,7 @@ public class UpdaterTests
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
                     detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+            await _projectUpdater.DidNotReceive().GetVersions(projectDependencies[0], _config.Value.Projects[0]);
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -477,6 +479,47 @@ public class UpdaterTests
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[1]);
         }
+    }
+
+    [Fact]
+    public async Task Update_Should_PushOnceForCombinedProject()
+    {
+        // Arrange
+        var project = _config.Value.Projects[0];
+        project.Directories = ["TestDir1", "TestDir2"];
+        var firstProjectFiles = new List<string> { "FirstProjectFile" };
+        var secondProjectFiles = new List<string> { "SecondProjectFile" };
+        _projectUpdater.GetAllProjectFiles("TestDir1").Returns(firstProjectFiles);
+        _projectUpdater.GetAllProjectFiles("TestDir2").Returns(secondProjectFiles);
+
+        var firstDependency = new DependencyDetails("FirstDependency", new Version(1, 0, 0));
+        var secondDependency = new DependencyDetails("SecondDependency", new Version(1, 0, 0));
+        _projectUpdater.ExtractAllPackages(firstProjectFiles).Returns([firstDependency]);
+        _projectUpdater.ExtractAllPackages(secondProjectFiles).Returns([secondDependency]);
+        _projectUpdater.GetVersions(firstDependency, project)
+            .Returns([firstDependency with { Version = new Version(2, 0, 0) }]);
+        _projectUpdater.GetVersions(secondDependency, project)
+            .Returns([secondDependency with { Version = new Version(2, 0, 0) }]);
+
+        var firstUpdate = new UpdateResult(firstDependency.Name, "1.0.0", "2.0.0");
+        var secondUpdate = new UpdateResult(secondDependency.Name, "1.0.0", "2.0.0");
+        _projectUpdater.HandleProjectUpdate(project, firstProjectFiles, Arg.Any<ICollection<DependencyDetails>>())
+            .Returns([firstUpdate]);
+        _projectUpdater.HandleProjectUpdate(project, secondProjectFiles, Arg.Any<ICollection<DependencyDetails>>())
+            .Returns([secondUpdate]);
+        _repositoryProvider.CommitChanges(_currentDir, project.Name, project.Groups[0]).Returns(true);
+
+        // Act
+        await _target.DoUpdate();
+
+        // Assert
+        _repositoryProvider.Received(2).CommitChanges(_currentDir, project.Name, project.Groups[0]);
+        _repositoryProvider.Received(1).PushChanges(_currentDir, project.Name, project.Groups[0]);
+        await _repositoryProvider.Received(1).SubmitPullRequest(
+            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates!.SequenceEqual(
+                new List<UpdateResult> { firstUpdate, secondUpdate })),
+            project.Name,
+            project.Groups[0]);
     }
 
     [Fact]
