@@ -44,7 +44,7 @@ public class UpdateStrategyTests
         repositoryProvider.Received(2).CommitChanges(Environment.CurrentDirectory, project.Name, "*");
         repositoryProvider.Received(1).PushChanges(Environment.CurrentDirectory, project.Name, "*");
         await repositoryProvider.Received(1).SubmitPullRequest(
-            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates.SequenceEqual(
+            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates!.SequenceEqual(
                 new List<UpdateResult> { firstUpdate, secondUpdate })),
             project.Name,
             "*");
@@ -72,7 +72,7 @@ public class UpdateStrategyTests
         projectUpdater.GetVersions(Arg.Any<DependencyDetails>(), project)
             .Returns(callInfo =>
             {
-                var dependency = callInfo.Arg<DependencyDetails>();
+                var dependency = callInfo.Arg<DependencyDetails>()!;
                 return new[] { dependency with { Version = new Version(2, 0, 0) } };
             });
         projectUpdater.HandleProjectUpdate(Arg.Any<Project>(), Arg.Any<IReadOnlyCollection<string>>(),

@@ -516,7 +516,7 @@ public class UpdaterTests
         _repositoryProvider.Received(2).CommitChanges(_currentDir, project.Name, project.Groups[0]);
         _repositoryProvider.Received(1).PushChanges(_currentDir, project.Name, project.Groups[0]);
         await _repositoryProvider.Received(1).SubmitPullRequest(
-            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates.SequenceEqual(
+            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates!.SequenceEqual(
                 new List<UpdateResult> { firstUpdate, secondUpdate })),
             project.Name,
             project.Groups[0]);
