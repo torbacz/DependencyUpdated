@@ -60,6 +60,7 @@ public sealed class Updater(IServiceProvider serviceProvider, IOptions<UpdaterCo
                     if (!result)
                     {
                         logger.Debug("No changes detected. Skipping pull request");
+                        repositoryProvider.CleanAndSwitchToDefaultBranch(repositoryPath);
                         continue;
                     }
 

@@ -19,6 +19,8 @@ internal sealed class NpmUpdater : IProjectUpdater
         PropertyNameCaseInsensitive = true
     };
     
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
+
     private static readonly string[] ValidNpmPatterns =
     [
         "package.json",
@@ -108,9 +110,9 @@ internal sealed class NpmUpdater : IProjectUpdater
                     var registryUrlPattern = @"@as:registry=(https\S+)";
                     var usernamePattern = @"username=(\S+)";
                     var passwordPattern = @":_password=(\S+)";
-                    var registryUrl = Regex.Match(allText, registryUrlPattern).Groups[1].Value;
-                    var username = Regex.Match(allText, usernamePattern).Groups[1].Value;
-                    var base64Password = Regex.Match(allText, passwordPattern).Groups[1].Value;
+                    var registryUrl = Regex.Match(allText, registryUrlPattern, RegexOptions.None, RegexTimeout).Groups[1].Value;
+                    var username = Regex.Match(allText, usernamePattern, RegexOptions.None, RegexTimeout).Groups[1].Value;
+                    var base64Password = Regex.Match(allText, passwordPattern, RegexOptions.None, RegexTimeout).Groups[1].Value;
                     var passwordBytes = Convert.FromBase64String(base64Password);
                     var password = Encoding.UTF8.GetString(passwordBytes);
                     var credentials = $"{username}:{password}";
@@ -148,6 +150,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     }
 
     [ExcludeFromCodeCoverage]
+    [SuppressMessage("SonarAnalyzer.CSharp", "S4036", Justification = "The npm executable is intentionally resolved through PATH.")]
     private static Process ProcessPackageGeneric(Project project, string? directory, DependencyDetails dependency)
     {
         var command = $"install {dependency.Name}@{dependency.Version}";
@@ -176,6 +179,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     }
 
     [ExcludeFromCodeCoverage]
+    [SuppressMessage("SonarAnalyzer.CSharp", "S4036", Justification = "cmd.exe is intentionally resolved through PATH.")]
     private static Process ProcessPackageWindows(Project project, string? directory, DependencyDetails dependency)
     {
         var command = $"npm install {dependency.Name}@{dependency.Version}";
@@ -280,6 +284,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     }
 
     [ExcludeFromCodeCoverage]
+    [SuppressMessage("SonarAnalyzer.CSharp", "S4036", Justification = "cmd.exe is intentionally resolved through PATH.")]
     private static void IsNpmInstalledWindows()
     {
         var psi = new ProcessStartInfo
@@ -301,6 +306,7 @@ internal sealed class NpmUpdater : IProjectUpdater
     }
 
     [ExcludeFromCodeCoverage]
+    [SuppressMessage("SonarAnalyzer.CSharp", "S4036", Justification = "The npm executable is intentionally resolved through PATH.")]
     private static void IsNpmInstalledGeneric()
     {
         var psi = new ProcessStartInfo
