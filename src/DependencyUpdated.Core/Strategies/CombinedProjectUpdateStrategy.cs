@@ -19,7 +19,7 @@ public sealed class CombinedProjectUpdateStrategy(
         foreach (var group in project.Groups)
         {
             repositoryProvider.SwitchToUpdateBranch(repositoryPath, project.Name, group);
-            var allUpdates = new List<UpdateResult>();
+            var allUpdates = new HashSet<UpdateResult>();
             IReadOnlyCollection<UpdateResult>? firstUpdates = null;
             var hasChanges = false;
 

@@ -151,27 +151,33 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
         }
     }
 
+    internal static string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
+    {
+        const int maxLength = 4_000;
+        const string truncationSuffix = "...";
+        var stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine("DependencyUpdater auto update");
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine("Packages:");
+
+        foreach (var update in updates)
+        {
+            stringBuilder.AppendLine($"- {update.PackageName}: {update.OldVersion} -> {update.NewVersion}");
+        }
+
+        var description = stringBuilder.ToString();
+        return description.Length <= maxLength
+            ? description
+            : description[..(maxLength - truncationSuffix.Length)] + truncationSuffix;
+    }
+
     private static string CreateGitBranchName(string projectName, string branchName, string group)
     {
         var newBranchName = $"{branchName.ToLower()}/{projectName.ToLower()}/{group.ToLower()}";
         newBranchName = newBranchName.Replace(".", "/").Replace("*", "asterix");
         return newBranchName;
     }
-    
-    private static string CreatePrDescription(IReadOnlyCollection<UpdateResult> updates)
-    {
-        var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("DependencyUpdater auto update");
-        stringBuilder.AppendLine();
-        stringBuilder.AppendLine("Log:");
-        foreach (var update in updates)
-        {
-            stringBuilder.AppendLine($"Bump {update.PackageName}: {update.OldVersion} -> {update.NewVersion}");
-        }
 
-        return stringBuilder.ToString();
-    }
-    
     private async Task<bool> CheckIfPrExists(string sourceBranchName, string targetBranchName)
     {
         var response = await azureDevOpsClient.GetPullRequests(

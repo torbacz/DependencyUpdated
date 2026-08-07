@@ -20,9 +20,9 @@ public class UpdateStrategyTests
         var firstFiles = new List<string> { "FirstProject" };
         var secondFiles = new List<string> { "SecondProject" };
         var firstDependency = new DependencyDetails("FirstDependency", new Version(1, 0, 0));
-        var secondDependency = new DependencyDetails("SecondDependency", new Version(1, 0, 0));
+        var secondDependency = new DependencyDetails("FirstDependency", new Version(1, 0, 0));
         var firstUpdate = new UpdateResult(firstDependency.Name, "1.0.0", "2.0.0");
-        var secondUpdate = new UpdateResult(secondDependency.Name, "1.0.0", "2.0.0");
+        var secondUpdate = firstUpdate;
 
         projectUpdater.GetAllProjectFiles("FirstDir").Returns(firstFiles);
         projectUpdater.GetAllProjectFiles("SecondDir").Returns(secondFiles);
@@ -45,7 +45,7 @@ public class UpdateStrategyTests
         repositoryProvider.Received(1).PushChanges(Environment.CurrentDirectory, project.Name, "*");
         await repositoryProvider.Received(1).SubmitPullRequest(
             Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates!.SequenceEqual(
-                new List<UpdateResult> { firstUpdate, secondUpdate })),
+                new List<UpdateResult> { firstUpdate })),
             project.Name,
             "*");
         repositoryProvider.Received(1).CleanAndSwitchToDefaultBranch(Environment.CurrentDirectory);
