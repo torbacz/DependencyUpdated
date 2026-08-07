@@ -8,7 +8,11 @@ public interface IAzureDevOpsClient
     const string ReviewersResource = "reviewers";
     
     [Get("/_apis/git/repositories/{repository}/pullrequests?api-version=6.0")]
-    Task<PullRequestArray> GetPullRequests(string repository);
+    Task<PullRequestArray> GetPullRequests(
+        string repository,
+        [AliasAs("searchCriteria.sourceRefName")] string? sourceRefName = null,
+        [AliasAs("searchCriteria.targetRefName")] string? targetRefName = null,
+        [AliasAs("searchCriteria.status")] string? status = null);
 
     [Post("/_apis/git/repositories/{repository}/pullrequests?api-version=6.0")]
     Task<PullRequestResponse> CreatePullRequest(string repository, [Body] PullRequest pullRequestInfo);

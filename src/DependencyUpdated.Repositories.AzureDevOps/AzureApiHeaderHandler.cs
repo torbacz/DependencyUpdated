@@ -17,9 +17,7 @@ internal sealed class AzureApiHeaderHandler(IOptions<UpdaterConfig> config) : De
         }
 
         request.Headers.Authorization ??= CreateToken(config.Value.AzureDevOps.PAT!);
-        var response = await base.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return response;
+        return await base.SendAsync(request, cancellationToken);
     }
 
     private static AuthenticationHeaderValue CreateToken(string token)
