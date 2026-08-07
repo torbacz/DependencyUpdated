@@ -26,7 +26,14 @@ internal sealed class LoggingHandler : HttpClientHandler
 
         Debug.WriteLine("Response:");
         Debug.WriteLine(response.ToString());
-        Debug.WriteLine(await response.Content.ReadAsStringAsync(cancellationToken));
+        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        Debug.WriteLine(responseBody);
+        if (!response.IsSuccessStatusCode)
+        {
+            await Console.Error.WriteLineAsync(
+                $"Azure DevOps request {request.Method} {request.RequestUri} failed with " +
+                $"{(int)response.StatusCode}: {responseBody}");
+        }
 
         return response;
     }

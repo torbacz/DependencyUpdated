@@ -174,7 +174,8 @@ internal sealed class AzureDevOps(TimeProvider timeProvider, IOptions<UpdaterCon
     
     private async Task<bool> CheckIfPrExists(string sourceBranchName, string targetBranchName)
     {
-        var response = await azureDevOpsClient.GetPullRequests(config.Value.AzureDevOps.Repository!);
+        var response = await azureDevOpsClient.GetPullRequests(
+            config.Value.AzureDevOps.Repository!, sourceBranchName, targetBranchName, "active");
         return response.Value.Any(pr => pr.SourceRefName == sourceBranchName && pr.TargetRefName == targetBranchName);
     }
 
