@@ -78,7 +78,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -91,7 +91,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -126,7 +126,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -139,7 +139,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -174,7 +174,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -187,7 +187,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -233,7 +233,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -246,7 +246,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -291,7 +291,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -304,7 +304,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -349,7 +349,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -362,7 +362,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -389,7 +389,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name,
             _config.Value.Projects[0].Groups[0]).Returns(true);
@@ -402,7 +402,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _projectUpdater.DidNotReceive().GetVersions(projectDependencies[0], _config.Value.Projects[0]);
             await _repositoryProvider.Received(1).SubmitPullRequest(expectedUpdateResult,
                 _config.Value.Projects[0].Name,
@@ -449,7 +449,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdateFirst)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdateFirst)))
             .Returns(expectedUpdateResultFirst);
         var expectedDependencyUpdateSecond = new List<DependencyDetails>(new[]
         {
@@ -459,7 +459,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdateSecond)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdateSecond)))
             .Returns(expectedUpdateResultSecond);
 
         // Act
@@ -470,10 +470,10 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdateFirst)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdateFirst)));
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdateSecond)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdateSecond)));
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
             _repositoryProvider.Received(1).CommitChanges(_currentDir, _config.Value.Projects[0].Name,
@@ -516,7 +516,7 @@ public class UpdaterTests
         _repositoryProvider.Received(2).CommitChanges(_currentDir, project.Name, project.Groups[0]);
         _repositoryProvider.Received(1).PushChanges(_currentDir, project.Name, project.Groups[0]);
         await _repositoryProvider.Received(1).SubmitPullRequest(
-            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates!.SequenceEqual(
+            Arg.Is<IReadOnlyCollection<UpdateResult>>(updates => updates.SequenceEqual(
                 new List<UpdateResult> { firstUpdate, secondUpdate })),
             project.Name,
             project.Groups[0]);
@@ -550,7 +550,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name, _config.Value.Projects[0].Groups[0]).Returns(false);
 
@@ -562,7 +562,7 @@ public class UpdaterTests
         {
             _projectUpdater.Received(1).HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)));
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)));
             await _repositoryProvider.DidNotReceiveWithAnyArgs().SubmitPullRequest(Arg.Any<IReadOnlyCollection<UpdateResult>>(),
                 _config.Value.Projects[0].Name,
                 _config.Value.Projects[0].Groups[0]);
@@ -597,7 +597,7 @@ public class UpdaterTests
         _projectUpdater
             .HandleProjectUpdate(_config.Value.Projects[0], projectList,
                 Arg.Is<ICollection<DependencyDetails>>(detailsCollection =>
-                    detailsCollection!.SequenceEqual(expectedDependencyUpdate)))
+                    detailsCollection.SequenceEqual(expectedDependencyUpdate)))
             .Returns(expectedUpdateResult);
         _repositoryProvider.CommitChanges(_currentDir, _config.Value.Projects[0].Name, _config.Value.Projects[0].Groups[0]).Returns(false);
 
