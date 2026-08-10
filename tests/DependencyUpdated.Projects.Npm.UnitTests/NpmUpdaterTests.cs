@@ -42,6 +42,52 @@ public class NpmUpdaterTests
     }
 
     [Fact]
+    public async Task ExtractAllPackages_Should_IgnoreInvalidVersions()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var packageJson = """
+                {
+                  "dependencies": {
+                    "stable-package": "^1.2.3",
+                    "pre-release-package": "1.0.0-beta",
+                    "invalid-range-package": "1.0~2"
+                  },
+                  "devDependencies": {}
+                }
+                """;
+            await File.WriteAllTextAsync(path, packageJson);
+
+            var packages = await _target.ExtractAllPackages([path]);
+
+            packages.Should().BeEquivalentTo([new DependencyDetails("stable-package", new Version(1, 2, 3))]);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExtractAllPackages_Should_ReturnEmptyForNullPackage()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, "null");
+
+            var packages = await _target.ExtractAllPackages([path]);
+
+            packages.Should().BeEmpty();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task GetVersions_Should_ReturnVersions()
     {
         // Arrange
@@ -57,6 +103,16 @@ public class NpmUpdaterTests
         {
             versions.Should().NotBeNullOrEmpty();
         }
+    }
+
+    [Fact]
+    public async Task GetVersions_Should_ThrowForMissingDependencyConfiguration()
+    {
+        var config = new Project { Type = ProjectType.Npm };
+        var dependency = new DependencyDetails("@angular/core", new Version(8, 2, 14));
+
+        await _target.Awaiting(x => x.GetVersions(dependency, config)).Should()
+            .ThrowExactlyAsync<InvalidOperationException>();
     }
 
     [Fact]
@@ -84,6 +140,17 @@ public class NpmUpdaterTests
             updateResult.Should().NotBeNullOrEmpty();
             updateResult.Should().ContainEquivalentOf(new UpdateResult(depsToUpdate[0].Name, "8.2.14", "9.0.0"));
         }
+    }
+
+    [Fact]
+    public void HandleProjectUpdate_Should_ReturnNoUpdatesForMissingDependency()
+    {
+        var config = new Project { Type = ProjectType.Npm };
+        var dependency = new DependencyDetails("missing-package", new Version(2, 0, 0));
+
+        var updates = _target.HandleProjectUpdate(config, [Path.Combine(_searchPath, "package.json")], [dependency]);
+
+        updates.Should().BeEmpty();
     }
 
     [Fact]
