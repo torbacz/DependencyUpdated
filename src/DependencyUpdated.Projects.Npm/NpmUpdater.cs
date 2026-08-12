@@ -97,7 +97,7 @@ internal sealed class NpmUpdater : IProjectUpdater
             {
                 if (depsConfiguration.StartsWith("http"))
                 {
-                    var npmApi = RestService.For<INpmApi>(depsConfiguration);
+                    var npmApi = RestService.ForGenerated<INpmApi>(depsConfiguration);
                     var packages = await npmApi.GetPackageData(package.Name, null);
                     data.AddRange(packages.Versions.Where(x => IsValidVersion(x.Value.Version))
                         .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))));
@@ -117,7 +117,7 @@ internal sealed class NpmUpdater : IProjectUpdater
                     var password = Encoding.UTF8.GetString(passwordBytes);
                     var credentials = $"{username}:{password}";
                     var credentialsBase64 = Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials));
-                    var npmApi = RestService.For<INpmApi>(registryUrl);
+                    var npmApi = RestService.ForGenerated<INpmApi>(registryUrl);
                     var packages = await npmApi.GetPackageData(package.Name, $"Basic {credentialsBase64}");
                     data.AddRange(packages.Versions.Where(x => IsValidVersion(x.Value.Version))
                         .Select(x => new DependencyDetails(x.Key, new Version(x.Value.Version))));
