@@ -15,7 +15,7 @@ public static class ConfigureServices
     {
         serviceCollection.AddKeyedSingleton<IRepositoryProvider, AzureDevOps>(RepositoryType.AzureDevOps);
         serviceCollection.AddSingleton<AzureApiHeaderHandler>();
-        serviceCollection.AddRefitClient<IAzureDevOpsClient>(_ => new RefitSettings()
+        serviceCollection.AddRefitGeneratedClient<IAzureDevOpsClient>(_ => new RefitSettings()
         {
             HttpMessageHandlerFactory = () => new LoggingHandler(),
             ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions()
