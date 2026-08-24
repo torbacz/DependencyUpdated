@@ -5,7 +5,7 @@
     
     <ItemGroup>
       <PackageReference Include="LibGit2Sharp" Version="0.32.0" />
-      <PackageReference Include="Refit" Version="15.0.0" />
+      <PackageReference Include="Refit" Version="15.2.0" />
       <PackageReference Include="Refit.HttpClientFactory" Version="15.0.0" />
       <PackageReference Include="System.Text.Json" Version="10.0.10" />
     </ItemGroup>
