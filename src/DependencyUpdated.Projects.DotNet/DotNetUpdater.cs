@@ -83,6 +83,11 @@ internal sealed class DotNetUpdater : IProjectUpdater
         foreach (var repository in repositories)
         {
             var findPackageByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>();
+            if (findPackageByIdResource is null)
+            {
+                continue;
+            }
+
             try
             {
                 var versions = await findPackageByIdResource.GetAllVersionsAsync(
