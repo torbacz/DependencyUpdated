@@ -3,6 +3,7 @@ using DependencyUpdated.Core.Interfaces;
 using DependencyUpdated.Core.Models;
 using DependencyUpdated.Core.Models.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json.Serialization.Metadata;
 
 namespace DependencyUpdated.Projects.DotNet.UnitTests;
 
@@ -105,6 +106,15 @@ public class DotNetUpdaterTests
             result.Should().NotBeNullOrEmpty();
             result.Should().ContainEquivalentOf(new DependencyDetails("Serilog", new Version(4, 0, 1, 0)));
         }
+    }
+
+    [Fact]
+    public void SystemTextJson_Should_ExposeObjectCreatorSetterUsedByNuGetProtocol()
+    {
+        var objectCreatorProperty = typeof(JsonObjectInfoValues<object>).GetProperty("ObjectCreator");
+
+        objectCreatorProperty.Should().NotBeNull();
+        objectCreatorProperty.SetMethod.Should().NotBeNull();
     }
 
     [Fact]

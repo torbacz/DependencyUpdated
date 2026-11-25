@@ -16,7 +16,7 @@ The tool can be installed via .NET global tools. Run the following command in yo
 dotnet tool install --global DependencyUpdaterTool
 ```
 
-Please ensure that you have .NET 8 or later installed on your machine before running the installation command above.
+Please ensure that you have .NET 10 or later installed on your machine before running the installation command above.
 
 ## Usage
 After installation, you can use the DependencyUpdaterTool in your terminal by running:
