@@ -90,14 +90,17 @@ public class UpdateStrategyTests
         repositoryProvider.Received(2).CleanAndSwitchToDefaultBranch(Environment.CurrentDirectory);
     }
 
-    private static Project CreateProject(IReadOnlyList<string> directories) => new()
+    private static Project CreateProject(IReadOnlyList<string> directories)
     {
-        Name = "TestProject",
-        Type = ProjectType.DotNet,
-        Version = VersionUpdateType.Major,
-        Directories = directories,
-        Groups = ["*"]
-    };
+        return new Project
+        {
+            Name = "TestProject",
+            Type = ProjectType.DotNet,
+            Version = VersionUpdateType.Major,
+            Directories = directories,
+            Groups = ["*"]
+        };
+    }
 
     private static DependencyUpdateProcessor CreateProcessor(
         IProjectUpdater projectUpdater,

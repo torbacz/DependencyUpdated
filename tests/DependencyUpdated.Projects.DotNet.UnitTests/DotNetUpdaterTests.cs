@@ -87,7 +87,7 @@ public class DotNetUpdaterTests
     }
     
     [Fact]
-    public async Task GetVersions_Should_GetPackagesFromSource()
+    public async Task GetVersions_Should_UpdateProjectToLatestPackageFromSource()
     {
         // Arrange
         var packages = new DependencyDetails("Serilog", new Version(1, 0, 0));
@@ -95,15 +95,31 @@ public class DotNetUpdaterTests
         projectConfiguration.ApplyDefaultValue();
         projectConfiguration.DependencyConfigurations = projectConfiguration.DependencyConfigurations
             .Concat(new[] { "./Projects/nuget.config" }).ToArray();
+        var temporaryDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryDirectory);
+        var projectFilePath = Path.Combine(temporaryDirectory, "TestProject.csproj");
+        await File.WriteAllTextAsync(projectFilePath,
+            "<Project><ItemGroup><PackageReference Include=\"Serilog\" Version=\"1.0.0\" /></ItemGroup></Project>");
 
-        // Act
-        var result = await _target.GetVersions(packages, projectConfiguration);
-
-        // Assert
-        using (new AssertionScope())
+        try
         {
-            result.Should().NotBeNullOrEmpty();
-            result.Should().ContainEquivalentOf(new DependencyDetails("Serilog", new Version(4, 0, 1, 0)));
+            // Act
+            var availableVersions = await _target.GetVersions(packages, projectConfiguration);
+            var latestPackage = availableVersions.OrderByDescending(x => x.Version).First();
+            var updateResults = _target.HandleProjectUpdate(projectConfiguration, [projectFilePath], [latestPackage]);
+            var updatedPackages = await _target.ExtractAllPackages([projectFilePath]);
+
+            // Assert
+            using (new AssertionScope())
+            {
+                availableVersions.Should().NotBeNullOrEmpty();
+                updateResults.Should().ContainEquivalentOf(new UpdateResult("Serilog", "1.0.0", latestPackage.Version.ToString()));
+                updatedPackages.Should().ContainEquivalentOf(latestPackage);
+            }
+        }
+        finally
+        {
+            Directory.Delete(temporaryDirectory, recursive: true);
         }
     }
 
